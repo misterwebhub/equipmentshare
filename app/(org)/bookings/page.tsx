@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useBookings, BookingForm } from '@/hooks/use-bookings';
 import { useEquipment } from '@/hooks/use-equipment';
 import { useCustomers } from '@/hooks/use-customers';
-import { useAvailableUnits } from '@/hooks/use-equipment-units';
+import { useEquipmentUnits, useAvailableUnits } from '@/hooks/use-equipment-units';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, CalendarDays, Eye } from 'lucide-react';
+import { Plus, Search, CalendarDays, Eye, Cpu, CheckCircle2, Clock, Wrench, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -39,12 +39,16 @@ export default function BookingsPage() {
   const { equipment } = useEquipment();
   const { customers } = useCustomers();
 
-  // Available SKU units for the selected equipment + date range
+  // All units for the selected equipment (shown immediately after equipment is picked)
+  const { units: allUnits } = useEquipmentUnits(form.equipment_id || null);
+
+  // Available (conflict-free) unit IDs when dates are also set
   const { data: availableUnits = [] } = useAvailableUnits(
     form.equipment_id || null,
     form.start_date,
     form.end_date,
   );
+  const availableIds = new Set(availableUnits.map((u) => u.id));
 
   const onEquipmentChange = (id: string) => {
     const eq = (equipment as Record<string, unknown>[]).find(e => e.id === id);
@@ -163,9 +167,16 @@ export default function BookingsPage() {
               <Select value={form.equipment_id} onValueChange={onEquipmentChange}>
                 <SelectTrigger><SelectValue placeholder="Select equipment" /></SelectTrigger>
                 <SelectContent>
-                  {(equipment as Record<string, unknown>[]).filter(e => e.status === 'available').map(e => (
-                    <SelectItem key={e.id as string} value={e.id as string}>{e.name as string}</SelectItem>
-                  ))}
+                  {(equipment as Record<string, unknown>[])
+                    .filter(e => e.status !== 'retired' && e.status !== 'damaged')
+                    .map(e => (
+                      <SelectItem key={e.id as string} value={e.id as string}>
+                        {e.name as string}
+                        {Number(e.available_units) > 0 && (
+                          <span className="ml-2 text-xs text-green-500">({Number(e.available_units)} avail)</span>
+                        )}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -185,30 +196,68 @@ export default function BookingsPage() {
               <div className="space-y-2"><Label>End Date *</Label><Input type="date" value={form.end_date} onChange={set('end_date')} /></div>
             </div>
 
-            {/* SKU unit selector — shown only when equipment + dates are selected and units exist */}
-            {form.equipment_id && form.start_date && form.end_date && (
+            {/* SKU unit picker — appears as soon as equipment is chosen */}
+            {form.equipment_id && (allUnits as unknown[]).length > 0 && (
               <div className="space-y-2">
-                <Label>
-                  SKU Unit
-                  {availableUnits.length > 0 ? (
-                    <span className="ml-2 text-xs text-green-400">({availableUnits.length} available)</span>
-                  ) : (
-                    <span className="ml-2 text-xs text-muted-foreground">(no tracked units — booking equipment-level)</span>
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-1.5">
+                    <Cpu className="h-3.5 w-3.5 text-violet-400" />
+                    Select Unit (SKU)
+                  </Label>
+                  {form.start_date && form.end_date && (
+                    <span className="text-xs text-green-400">{availableIds.size} available for dates</span>
                   )}
-                </Label>
-                {availableUnits.length > 0 && (
-                  <Select value={form.equipment_unit_id} onValueChange={(v) => setForm(p => ({ ...p, equipment_unit_id: v === 'none' ? '' : v }))}>
-                    <SelectTrigger><SelectValue placeholder="Select a SKU unit (optional)" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">— No specific unit —</SelectItem>
-                      {availableUnits.map(u => (
-                        <SelectItem key={u.id} value={u.id}>
-                          <span className="font-mono">{u.sku_code}</span>
-                          {u.notes ? ` · ${u.notes}` : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                </div>
+
+                {/* Unit chips — one per physical unit */}
+                <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-border/60 bg-muted/20">
+                  {(allUnits as Record<string, unknown>[]).map((u) => {
+                    const uid = u.id as string;
+                    const sku = u.sku_code as string;
+                    const st  = u.status as string;
+                    const datesSet = !!(form.start_date && form.end_date);
+                    // If dates are set: only available units are selectable; otherwise go by current status
+                    const isBooked   = datesSet ? !availableIds.has(uid) : st === 'rented-out';
+                    const isDisabled = datesSet ? !availableIds.has(uid) : (st === 'maintenance' || st === 'damaged' || st === 'retired');
+                    const isSelected = form.equipment_unit_id === uid;
+
+                    const chipColor = isSelected
+                      ? 'border-violet-500 bg-violet-500/20 text-violet-300'
+                      : isBooked
+                        ? 'border-blue-500/40 bg-blue-500/10 text-blue-400 opacity-60 cursor-not-allowed'
+                        : isDisabled
+                          ? 'border-red-500/30 bg-red-500/10 text-red-400 opacity-50 cursor-not-allowed'
+                          : 'border-green-500/40 bg-green-500/10 text-green-300 hover:border-violet-500 hover:bg-violet-500/10 cursor-pointer';
+
+                    const StatusIcon = isBooked ? Clock : isDisabled ? (st === 'maintenance' ? Wrench : AlertTriangle) : CheckCircle2;
+
+                    return (
+                      <button
+                        key={uid}
+                        type="button"
+                        disabled={isDisabled || isBooked}
+                        onClick={() => setForm(p => ({ ...p, equipment_unit_id: isSelected ? '' : uid }))}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-mono font-semibold transition-all ${chipColor}`}
+                        title={isBooked ? 'Already booked for these dates' : isDisabled ? `Status: ${st}` : `Select unit ${sku}`}
+                      >
+                        <StatusIcon className="h-3 w-3 shrink-0" />
+                        {sku}
+                        {u.notes && <span className="ml-1 font-sans font-normal opacity-70">{u.notes as string}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {form.equipment_unit_id && (
+                  <p className="text-xs text-violet-400 flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Unit <span className="font-mono font-bold">
+                      {(allUnits as Record<string, unknown>[]).find(u => u.id === form.equipment_unit_id)?.sku_code as string}
+                    </span> selected
+                  </p>
+                )}
+                {!form.start_date && (
+                  <p className="text-xs text-muted-foreground">Set dates to see availability for specific dates.</p>
                 )}
               </div>
             )}
