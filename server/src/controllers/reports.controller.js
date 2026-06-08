@@ -3,14 +3,29 @@ const { pool } = require('../config/database');
 async function dashboardStats(req, res) {
   try {
     const id = req.orgId;
-    const [[equip]] = await pool.execute(
-      `SELECT COUNT(*) as total,
-       COALESCE(SUM(status="available"),0) as available,
-       COALESCE(SUM(status="rented-out"),0) as rented,
-       COALESCE(SUM(status="maintenance"),0) as maintenance
-       FROM equipment WHERE org_id=? AND deleted_at IS NULL`,
+    // Equipment model count
+    const [[equipModels]] = await pool.execute(
+      `SELECT COUNT(*) as total FROM equipment WHERE org_id=? AND deleted_at IS NULL`,
       [id]
     );
+    // Per-unit counts from equipment_units table (SKU-level tracking)
+    const [[unitCounts]] = await pool.execute(
+      `SELECT COUNT(*) as total_units,
+       COALESCE(SUM(status='available'),0) as available,
+       COALESCE(SUM(status='rented-out'),0) as rented,
+       COALESCE(SUM(status='maintenance'),0) as maintenance,
+       COALESCE(SUM(status='damaged'),0) as damaged
+       FROM equipment_units WHERE org_id=?`,
+      [id]
+    );
+    const equip = {
+      total: equipModels.total,
+      total_units: unitCounts.total_units,
+      available: unitCounts.available,
+      rented: unitCounts.rented,
+      maintenance: unitCounts.maintenance,
+      damaged: unitCounts.damaged,
+    };
     const [[book]] = await pool.execute(
       `SELECT COALESCE(SUM(status="active"),0) as active,
        COALESCE(SUM(status="overdue"),0) as overdue,

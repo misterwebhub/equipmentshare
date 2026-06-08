@@ -1,11 +1,13 @@
 const { v4: uuidv4 } = require('uuid');
 const { pool } = require('../config/database');
 
-const BOOKING_SELECT = `SELECT b.*,c.name as customer_name,e.name as equipment_name,u.name as assigned_user_name
+const BOOKING_SELECT = `SELECT b.*,c.name as customer_name,e.name as equipment_name,u.name as assigned_user_name,
+  eu.sku_code as equipment_sku_code
   FROM bookings b
   JOIN customers c ON b.customer_id=c.id
   JOIN equipment e ON b.equipment_id=e.id
-  LEFT JOIN users u ON b.assigned_user_id=u.id`;
+  LEFT JOIN users u ON b.assigned_user_id=u.id
+  LEFT JOIN equipment_units eu ON b.equipment_unit_id=eu.id`;
 
 async function list(req, res) {
   try {
@@ -63,38 +65,50 @@ async function getById(req, res) {
 async function create(req, res) {
   try {
     const {
-      customer_id, equipment_id, assigned_user_id, start_date, end_date,
+      customer_id, equipment_id, equipment_unit_id, assigned_user_id, start_date, end_date,
       pricing_type, fixed_rate, hourly_rate, hours_used,
       estimated_cost, security_deposit, notes, status,
     } = req.body;
     if (!customer_id || !equipment_id || !start_date || !end_date)
       return res.status(400).json({ success: false, message: 'customer_id, equipment_id, start_date, end_date required' });
 
-    const [conflicts] = await pool.execute(
-      `SELECT id FROM bookings WHERE equipment_id=? AND org_id=? AND status NOT IN ('cancelled','completed') AND NOT (end_date < ? OR start_date > ?)`,
-      [equipment_id, req.orgId, start_date, end_date]
-    );
-    if (conflicts.length)
-      return res.status(409).json({ success: false, message: 'Equipment is not available for selected dates' });
+    // If a specific SKU unit is chosen, check SKU-level availability
+    if (equipment_unit_id) {
+      const [unitConflicts] = await pool.execute(
+        `SELECT id FROM bookings WHERE equipment_unit_id=? AND org_id=? AND status NOT IN ('cancelled','completed') AND NOT (end_date < ? OR start_date > ?)`,
+        [equipment_unit_id, req.orgId, start_date, end_date]
+      );
+      if (unitConflicts.length)
+        return res.status(409).json({ success: false, message: 'This SKU unit is not available for selected dates' });
+    } else {
+      // Fall back to equipment-level conflict check (no SKU tracking)
+      const [conflicts] = await pool.execute(
+        `SELECT id FROM bookings WHERE equipment_id=? AND equipment_unit_id IS NULL AND org_id=? AND status NOT IN ('cancelled','completed') AND NOT (end_date < ? OR start_date > ?)`,
+        [equipment_id, req.orgId, start_date, end_date]
+      );
+      if (conflicts.length)
+        return res.status(409).json({ success: false, message: 'Equipment is not available for selected dates' });
+    }
 
     const id = uuidv4();
     await pool.execute(
-      `INSERT INTO bookings (id,org_id,customer_id,equipment_id,assigned_user_id,start_date,end_date,pricing_type,fixed_rate,hourly_rate,hours_used,estimated_cost,security_deposit,notes,status)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      `INSERT INTO bookings (id,org_id,customer_id,equipment_id,equipment_unit_id,assigned_user_id,start_date,end_date,pricing_type,fixed_rate,hourly_rate,hours_used,estimated_cost,security_deposit,notes,status)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
-        id, req.orgId, customer_id, equipment_id, assigned_user_id || null,
+        id, req.orgId, customer_id, equipment_id, equipment_unit_id || null, assigned_user_id || null,
         start_date, end_date, pricing_type || 'fixed', fixed_rate || 0,
         hourly_rate || null, hours_used || null, estimated_cost || 0,
         security_deposit || 0, notes || '', status || 'pending',
       ]
     );
-    if (status === 'active')
+
+    // Update unit status if SKU selected and booking is active
+    if (equipment_unit_id && status === 'active')
+      await pool.execute('UPDATE equipment_units SET status="rented-out" WHERE id=?', [equipment_unit_id]);
+    else if (status === 'active')
       await pool.execute('UPDATE equipment SET status="rented-out" WHERE id=?', [equipment_id]);
 
-    const [rows] = await pool.execute(
-      `${BOOKING_SELECT} WHERE b.id=?`,
-      [id]
-    );
+    const [rows] = await pool.execute(`${BOOKING_SELECT} WHERE b.id=?`, [id]);
     res.status(201).json({ success: true, data: rows[0] });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -133,12 +147,18 @@ async function updateStatus(req, res) {
       'UPDATE bookings SET status=?,actual_cost=COALESCE(?,actual_cost) WHERE id=? AND org_id=?',
       [status, actual_cost || null, req.params.id, req.orgId]
     );
-    const [booking] = await pool.execute('SELECT equipment_id FROM bookings WHERE id=?', [req.params.id]);
+    const [booking] = await pool.execute('SELECT equipment_id, equipment_unit_id FROM bookings WHERE id=?', [req.params.id]);
     if (booking.length) {
-      const eqStatus =
+      const { equipment_id, equipment_unit_id } = booking[0];
+      const unitStatus =
         status === 'active' ? 'rented-out' :
         (status === 'completed' || status === 'cancelled') ? 'available' : null;
-      if (eqStatus) await pool.execute('UPDATE equipment SET status=? WHERE id=?', [eqStatus, booking[0].equipment_id]);
+
+      if (unitStatus && equipment_unit_id) {
+        await pool.execute('UPDATE equipment_units SET status=? WHERE id=?', [unitStatus, equipment_unit_id]);
+      } else if (unitStatus) {
+        await pool.execute('UPDATE equipment SET status=? WHERE id=?', [unitStatus, equipment_id]);
+      }
     }
     res.json({ success: true, message: 'Status updated' });
   } catch (err) {

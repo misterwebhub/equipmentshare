@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   LayoutDashboard, Package, CalendarDays, Users, Wrench,
   BarChart3, Settings, LogOut, Menu, X, Tag, AlertTriangle,
-  UserCheck, ChevronRight, Cpu,
+  UserCheck, ChevronRight, Cpu, Layers,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Moon, Sun } from 'lucide-react';
@@ -16,6 +16,7 @@ import { Moon, Sun } from 'lucide-react';
 const NAV = [
   { href: '/dashboard',   label: 'Dashboard',   icon: LayoutDashboard, color: 'oklch(0.70 0.28 270)' },
   { href: '/equipment',   label: 'Equipment',   icon: Package,         color: 'oklch(0.78 0.22 195)' },
+  { href: '/fleet',       label: 'Fleet',       icon: Layers,          color: 'oklch(0.72 0.26 280)' },
   { href: '/categories',  label: 'Categories',  icon: Tag,             color: 'oklch(0.76 0.26 50)'  },
   { href: '/customers',   label: 'Customers',   icon: UserCheck,       color: 'oklch(0.76 0.22 155)' },
   { href: '/bookings',    label: 'Bookings',    icon: CalendarDays,    color: 'oklch(0.68 0.26 250)' },

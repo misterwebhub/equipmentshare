@@ -25,7 +25,7 @@ const EMPTY_FORM = {
   security_deposit: '',
 };
 
-export type EquipmentForm = typeof EMPTY_FORM;
+export type EquipmentForm = typeof EMPTY_FORM & { skus?: { sku_code: string; notes: string }[] };
 
 export function useEquipment(filters: Partial<EquipmentFilters> = {}) {
   const qc = useQueryClient();
