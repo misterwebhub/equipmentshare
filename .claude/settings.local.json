@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//mnt/d/Dreamprojectsaas/equip-track-pro-saa-s/**)",
+      "Read(//mnt/d/Dreamprojectsaas/equip-track-pro-saa-s/server/**)",
+      "Read(//mnt/**)",
+      "Bash(ls /mnt/)",
+      "Bash(node src/app.js)",
+      "Bash(curl -s http://localhost:5000/health)",
+      "Bash(node src/database/migrate.js)",
+      "Bash(node src/database/seed.js)",
+      "Bash(cp /tmp/test_api.js /d/Dreamprojectsaas/equip-track-pro-saa-s/test_api.js)",
+      "Bash(node /d/Dreamprojectsaas/equip-track-pro-saa-s/test_api.js)",
+      "Bash(node test_api.js)",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(tasklist)",
+      "Bash(curl -s \"http://localhost:5000/api/bookings/availability?equipment_id=test&start_date=2026-07-01&end_date=2026-07-05\" -H \"Authorization: Bearer invalid\")",
+      "Bash(curl -s \"http://localhost:5000/api/reports/dashboard\" -H \"Authorization: Bearer invalid\")",
+      "Bash(taskkill /F /PID 25420)",
+      "Bash(curl -s \"http://localhost:5000/api/reports/dashboard-stats\")",
+      "Bash(curl -s \"http://localhost:5000/api/bookings/check-availability\")",
+      "Bash(curl -s \"http://localhost:5000/api/reports/dashboard\")",
+      "Bash(curl -s \"http://localhost:5000/api/bookings/availability?equipment_id=x&start_date=2026-07-01&end_date=2026-07-05\")",
+      "Bash(powershell -Command \"Stop-Process -Id 25420 -Force\")",
+      "Bash(git add *)",
+      "Bash(git -C \"D:/Dreamprojectsaas/equip-track-pro-saa-s\" add .gitattributes)",
+      "Bash(git config *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git commit -m 'fix: load Google Fonts via next/font instead of CSS @import *)",
+      "Bash(git remote *)",
+      "Bash(git push *)"
+    ]
+  }
+}
