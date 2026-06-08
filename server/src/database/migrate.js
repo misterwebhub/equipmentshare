@@ -288,6 +288,26 @@ async function runMigrations() {
     }
   }
 
+  // ── Column patches (ALTER TABLE ADD COLUMN IF NOT EXISTS workaround) ──
+  // MySQL < 8.0 doesn't support IF NOT EXISTS on ALTER TABLE ADD COLUMN.
+  // We catch ER_DUP_FIELDNAME (1060) and treat it as success.
+  const columnPatches = [
+    ['bookings', 'equipment_unit_id', 'ALTER TABLE bookings ADD COLUMN equipment_unit_id VARCHAR(36) NULL AFTER equipment_id'],
+    ['bookings', 'deposit_returned',  'ALTER TABLE bookings ADD COLUMN deposit_returned TINYINT(1) DEFAULT 0'],
+    ['bookings', 'return_condition',  "ALTER TABLE bookings ADD COLUMN return_condition ENUM('excellent','good','fair','poor') NULL"],
+  ];
+
+  console.log('\nApplying column patches...');
+  for (const [table, col, sql] of columnPatches) {
+    try {
+      await conn.execute(sql);
+      console.log(`  ADDED: ${table}.${col}`);
+    } catch (err) {
+      if (err.errno === 1060) console.log(`  EXISTS: ${table}.${col}`);
+      else console.error(`  FAIL ${table}.${col}:`, err.message);
+    }
+  }
+
   console.log('\nAll migrations complete!');
   await conn.end();
 }
