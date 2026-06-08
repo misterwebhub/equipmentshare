@@ -171,6 +171,25 @@ const migrations = [
     FOREIGN KEY (equipment_id) REFERENCES equipment(id)
   )`,
 
+  `CREATE TABLE IF NOT EXISTS booking_items (
+    id VARCHAR(36) PRIMARY KEY,
+    org_id VARCHAR(36) NOT NULL,
+    booking_id VARCHAR(36) NOT NULL,
+    equipment_id VARCHAR(36) NOT NULL,
+    equipment_unit_id VARCHAR(36),
+    description VARCHAR(255),
+    pricing_type ENUM('fixed','daily','weekly','monthly','hourly') DEFAULT 'daily',
+    unit_rate DECIMAL(10,2) DEFAULT 0,
+    quantity DECIMAL(10,2) DEFAULT 1,
+    line_total DECIMAL(10,2) DEFAULT 0,
+    notes TEXT,
+    sort_order INT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (org_id) REFERENCES organisations(id) ON DELETE CASCADE,
+    FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
+    FOREIGN KEY (equipment_id) REFERENCES equipment(id)
+  )`,
+
   `CREATE TABLE IF NOT EXISTS penalties (
     id VARCHAR(36) PRIMARY KEY,
     org_id VARCHAR(36) NOT NULL,
@@ -295,6 +314,9 @@ async function runMigrations() {
     ['bookings', 'equipment_unit_id', 'ALTER TABLE bookings ADD COLUMN equipment_unit_id VARCHAR(36) NULL AFTER equipment_id'],
     ['bookings', 'deposit_returned',  'ALTER TABLE bookings ADD COLUMN deposit_returned TINYINT(1) DEFAULT 0'],
     ['bookings', 'return_condition',  "ALTER TABLE bookings ADD COLUMN return_condition ENUM('excellent','good','fair','poor') NULL"],
+    ['bookings', 'invoice_number',    "ALTER TABLE bookings ADD COLUMN invoice_number VARCHAR(50) NULL"],
+    ['bookings', 'discount',          "ALTER TABLE bookings ADD COLUMN discount DECIMAL(10,2) DEFAULT 0"],
+    ['bookings', 'tax_rate',          "ALTER TABLE bookings ADD COLUMN tax_rate DECIMAL(5,2) DEFAULT 0"],
   ];
 
   console.log('\nApplying column patches...');

@@ -4,32 +4,38 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 
 export interface BookingFilters {
-  search: string;
-  status: string;
-  from: string;
-  to: string;
+  search?: string;
+  status?: string;
+  from?: string;
+  to?: string;
 }
 
-const EMPTY_FORM = {
-  customer_id: '',
-  equipment_id: '',
-  equipment_unit_id: '',
-  assigned_user_id: '',
-  start_date: '',
-  end_date: '',
-  pricing_type: 'fixed',
-  fixed_rate: '',
-  hourly_rate: '',
-  hours_used: '',
-  estimated_cost: '',
-  security_deposit: '',
-  notes: '',
-  status: 'pending',
-};
+export interface BookingItem {
+  equipment_id: string;
+  equipment_unit_id?: string;
+  description?: string;
+  pricing_type: string; // fixed | daily | weekly | monthly | hourly
+  unit_rate: number;
+  quantity: number;
+}
 
-export type BookingForm = typeof EMPTY_FORM;
+export interface CreateBookingPayload {
+  customer_id: string;
+  assigned_user_id?: string;
+  start_date: string;
+  end_date: string;
+  security_deposit?: number;
+  discount?: number;
+  tax_rate?: number;
+  estimated_cost?: number;
+  notes?: string;
+  status?: string;
+  items: BookingItem[];
+}
 
-export function useBookings(filters: Partial<BookingFilters> = {}) {
+export type BookingForm = CreateBookingPayload;
+
+export function useBookings(filters: BookingFilters = {}) {
   const qc = useQueryClient();
 
   const query = useQuery({
@@ -46,34 +52,15 @@ export function useBookings(filters: Partial<BookingFilters> = {}) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (form: BookingForm) =>
-      api.post('/bookings', {
-        ...form,
-        fixed_rate: form.fixed_rate ? Number(form.fixed_rate) : 0,
-        hourly_rate: form.hourly_rate ? Number(form.hourly_rate) : null,
-        hours_used: form.hours_used ? Number(form.hours_used) : null,
-        estimated_cost: form.estimated_cost ? Number(form.estimated_cost) : 0,
-        security_deposit: form.security_deposit ? Number(form.security_deposit) : 0,
-        assigned_user_id: form.assigned_user_id || null,
-        equipment_unit_id: (form as BookingForm & { equipment_unit_id?: string }).equipment_unit_id || null,
-      }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['bookings'] }); toast.success('Booking created'); },
-    onError: (e: unknown) => toast.error((e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error creating booking'),
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, form }: { id: string; form: BookingForm }) =>
-      api.put(`/bookings/${id}`, {
-        ...form,
-        fixed_rate: form.fixed_rate ? Number(form.fixed_rate) : 0,
-        hourly_rate: form.hourly_rate ? Number(form.hourly_rate) : null,
-        hours_used: form.hours_used ? Number(form.hours_used) : null,
-        estimated_cost: form.estimated_cost ? Number(form.estimated_cost) : 0,
-        security_deposit: form.security_deposit ? Number(form.security_deposit) : 0,
-        assigned_user_id: form.assigned_user_id || null,
-      }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['bookings'] }); toast.success('Booking updated'); },
-    onError: (e: unknown) => toast.error((e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error updating booking'),
+    mutationFn: (payload: CreateBookingPayload) => api.post('/bookings', payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['bookings'] });
+      qc.invalidateQueries({ queryKey: ['equipment'] });
+      qc.invalidateQueries({ queryKey: ['equipment-units'] });
+      toast.success('Booking created');
+    },
+    onError: (e: unknown) =>
+      toast.error((e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error creating booking'),
   });
 
   const updateStatusMutation = useMutation({
@@ -82,9 +69,12 @@ export function useBookings(filters: Partial<BookingFilters> = {}) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['bookings'] });
       qc.invalidateQueries({ queryKey: ['equipment'] });
+      qc.invalidateQueries({ queryKey: ['equipment-units'] });
+      qc.invalidateQueries({ queryKey: ['fleet-view'] });
       toast.success('Status updated');
     },
-    onError: (e: unknown) => toast.error((e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error'),
+    onError: (e: unknown) =>
+      toast.error((e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error'),
   });
 
   return {
@@ -92,22 +82,7 @@ export function useBookings(filters: Partial<BookingFilters> = {}) {
     isLoading: query.isLoading,
     isError: query.isError,
     createMutation,
-    updateMutation,
     updateStatusMutation,
-    EMPTY_FORM,
+    EMPTY_FORM: {} as CreateBookingPayload,
   };
-}
-
-export function useCheckAvailability(equipmentId: string, startDate: string, endDate: string, excludeId?: string) {
-  return useQuery({
-    queryKey: ['availability', equipmentId, startDate, endDate, excludeId],
-    queryFn: async () => {
-      if (!equipmentId || !startDate || !endDate) return { available: true };
-      const params = new URLSearchParams({ equipment_id: equipmentId, start_date: startDate, end_date: endDate });
-      if (excludeId) params.set('exclude_booking_id', excludeId);
-      const { data } = await api.get(`/bookings/availability?${params}`);
-      return data as { available: boolean; conflicts: unknown[] };
-    },
-    enabled: !!(equipmentId && startDate && endDate),
-  });
 }
