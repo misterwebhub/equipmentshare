@@ -1,6 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { useBookings } from '@/hooks/use-bookings';
+import { useState } from 'react';
+import { useBookings, useBookingById } from '@/hooks/use-bookings';
 import { useEquipment } from '@/hooks/use-equipment';
 import { useCustomers } from '@/hooks/use-customers';
 import { useEquipmentUnits, useAvailableUnits } from '@/hooks/use-equipment-units';
@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, CalendarDays, Eye, Trash2, FileText, Package, CheckCircle2, Clock, Wrench, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Search, CalendarDays, Eye, Trash2, FileText, Package, CheckCircle2, Clock, Wrench, AlertTriangle, Building2, User, Hash, Calendar, DollarSign, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 
 /* ── Types ─────────────────────────────────────────────────────────── */
@@ -213,13 +213,13 @@ export default function BookingsPage() {
   const [search, setSearch]       = useState('');
   const [statusFilter, setStatus] = useState('all');
   const [open, setOpen]           = useState(false);
-  const [viewing, setViewing]     = useState<Record<string, unknown> | null>(null);
-  const [showItems, setShowItems] = useState<string | null>(null);
+  const [viewingId, setViewingId] = useState<string | null>(null);
 
   const [header, setHeader]   = useState(EMPTY_HEADER);
   const [lines, setLines]     = useState<LineItem[]>([newLine()]);
 
   const { bookings, isLoading, createMutation, updateStatusMutation } = useBookings({ search, status: statusFilter });
+  const { data: invoiceDetail, isLoading: invoiceLoading } = useBookingById(viewingId);
   const { equipment } = useEquipment();
   const { customers } = useCustomers();
 
@@ -356,7 +356,8 @@ export default function BookingsPage() {
                     <Badge className={`text-xs capitalize border ${STATUS_COLORS[b.status as string]||''}`} variant="outline">{b.status as string}</Badge>
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewing(b)}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-violet-400 hover:text-violet-300"
+                      onClick={() => setViewingId(b.id as string)}>
                       <Eye className="h-3 w-3"/>
                     </Button>
                   </TableCell>
@@ -491,54 +492,199 @@ export default function BookingsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ── View / Status Dialog ── */}
-      <Dialog open={!!viewing} onOpenChange={() => setViewing(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-violet-400"/>
-              {(viewing?.invoice_number as string) || 'Booking Details'}
-            </DialogTitle>
-          </DialogHeader>
-          {viewing && (
-            <div className="space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-3">
-                <div><p className="text-muted-foreground text-xs">Customer</p><p className="font-medium">{viewing.customer_name as string}</p></div>
-                <div>
-                  <p className="text-muted-foreground text-xs">Status</p>
-                  <Badge className={`text-xs capitalize border ${STATUS_COLORS[viewing.status as string]||''}`} variant="outline">{viewing.status as string}</Badge>
-                </div>
-                <div><p className="text-muted-foreground text-xs">Start</p><p>{format(new Date(viewing.start_date as string),'MMM d, yyyy')}</p></div>
-                <div><p className="text-muted-foreground text-xs">End</p><p>{format(new Date(viewing.end_date as string),'MMM d, yyyy')}</p></div>
-                <div><p className="text-muted-foreground text-xs">Total</p><p className="font-semibold text-cyan-400">${(viewing.estimated_cost as number)?.toLocaleString(undefined,{minimumFractionDigits:2})}</p></div>
-                {Number(viewing.discount) > 0 && <div><p className="text-muted-foreground text-xs">Discount</p><p className="text-rose-400">−${Number(viewing.discount).toFixed(2)}</p></div>}
-              </div>
-
-              {/* Equipment lines */}
-              {(viewing.equipment_names as string) && (
-                <div>
-                  <p className="text-muted-foreground text-xs mb-1">Equipment</p>
-                  <p className="text-sm">{viewing.equipment_names as string}</p>
-                </div>
-              )}
-
-              {viewing.notes && <div><p className="text-muted-foreground text-xs">Notes</p><p>{viewing.notes as string}</p></div>}
-
-              <div>
-                <Label className="mb-2 block text-xs">Update Status</Label>
-                <div className="flex gap-2 flex-wrap">
-                  {['pending','active','completed','cancelled'].map(s => (
-                    <Button key={s} size="sm"
-                      variant={viewing.status===s ? 'default' : 'outline'}
-                      className={`capitalize text-xs ${viewing.status===s ? 'bg-violet-600' : ''}`}
-                      onClick={() => { updateStatusMutation.mutate({id: viewing.id as string, status: s}); setViewing(null); }}>
-                      {s}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+      {/* ── Invoice Detail Dialog ── */}
+      <Dialog open={!!viewingId} onOpenChange={() => setViewingId(null)}>
+        <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0">
+          {invoiceLoading ? (
+            <div className="flex items-center justify-center h-48">
+              <div className="h-8 w-8 rounded-full border-2 border-violet-500 border-t-transparent animate-spin"/>
             </div>
-          )}
+          ) : invoiceDetail ? (() => {
+            const inv = invoiceDetail;
+            const items = (inv.items || []) as Record<string, unknown>[];
+            const subtotal   = items.reduce((s, it) => s + Number(it.line_total || 0), 0);
+            const discount   = Number(inv.discount  || 0);
+            const taxRate    = Number(inv.tax_rate   || 0);
+            const taxAmt     = (subtotal - discount) * taxRate / 100;
+            const grandTotal = Math.max(0, subtotal - discount + taxAmt);
+            const statusKey  = inv.status as string;
+            const PRICING_SHORT: Record<string, string> = { fixed:'Fixed', daily:'/ day', weekly:'/ wk', monthly:'/ mo', hourly:'/ hr' };
+
+            return (
+              <div>
+                {/* ── Invoice header band ── */}
+                <div className="relative overflow-hidden rounded-t-lg px-6 pt-6 pb-5"
+                  style={{ background: 'linear-gradient(135deg, oklch(0.14 0.035 265) 0%, oklch(0.10 0.025 265) 100%)' }}>
+                  {/* decorative orbs */}
+                  <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-10"
+                    style={{ background: 'oklch(0.70 0.28 270)' }}/>
+                  <div className="absolute right-8 bottom-0 h-20 w-20 rounded-full opacity-8"
+                    style={{ background: 'oklch(0.78 0.22 195)' }}/>
+
+                  <div className="relative flex items-start justify-between gap-4">
+                    {/* Left: brand + invoice number */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="h-8 w-8 rounded-lg flex items-center justify-center"
+                          style={{ background: 'linear-gradient(135deg, oklch(0.70 0.28 270), oklch(0.78 0.22 195))' }}>
+                          <FileText className="h-4 w-4 text-white"/>
+                        </div>
+                        <span className="text-xs font-semibold tracking-widest uppercase text-white/50">Invoice</span>
+                      </div>
+                      <p className="text-2xl font-bold font-mono tracking-tight text-white">
+                        {(inv.invoice_number as string) || '—'}
+                      </p>
+                      <p className="text-xs text-white/40 mt-0.5">
+                        Created {format(new Date(inv.created_at as string), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+
+                    {/* Right: status badge */}
+                    <div className="mt-1">
+                      <Badge className={`text-sm font-semibold capitalize border px-3 py-1 ${STATUS_COLORS[statusKey]||''}`} variant="outline">
+                        {statusKey}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Customer + dates row ── */}
+                <div className="grid grid-cols-2 gap-px bg-border/30 border-b border-border/30">
+                  <div className="bg-background px-6 py-4 space-y-1">
+                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+                      <User className="h-3 w-3"/> Bill To
+                    </p>
+                    <p className="font-semibold text-sm">{inv.customer_name as string}</p>
+                    {inv.customer_email && <p className="text-xs text-muted-foreground">{inv.customer_email as string}</p>}
+                    {inv.customer_phone && <p className="text-xs text-muted-foreground">{inv.customer_phone as string}</p>}
+                  </div>
+                  <div className="bg-background px-6 py-4 space-y-2">
+                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+                      <Calendar className="h-3 w-3"/> Rental Period
+                    </p>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="font-medium">{format(new Date(inv.start_date as string), 'MMM d, yyyy')}</span>
+                      <span className="text-muted-foreground">→</span>
+                      <span className="font-medium">{format(new Date(inv.end_date as string), 'MMM d, yyyy')}</span>
+                    </div>
+                    {inv.assigned_user_name && (
+                      <p className="text-xs text-muted-foreground">Assigned: {inv.assigned_user_name as string}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* ── Line items table ── */}
+                <div className="px-6 py-4">
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1">
+                    <Tag className="h-3 w-3"/> Line Items
+                  </p>
+
+                  {items.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic">No line items recorded.</p>
+                  ) : (
+                    <div className="rounded-lg border border-border/50 overflow-hidden">
+                      {/* Table head */}
+                      <div className="grid grid-cols-12 bg-muted/40 px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                        <div className="col-span-5">Equipment</div>
+                        <div className="col-span-2">SKU</div>
+                        <div className="col-span-2 text-center">Rate</div>
+                        <div className="col-span-1 text-center">Qty</div>
+                        <div className="col-span-2 text-right">Total</div>
+                      </div>
+
+                      {/* Rows */}
+                      {items.map((it, idx) => (
+                        <div key={it.id as string}
+                          className={`grid grid-cols-12 px-3 py-3 text-sm items-center ${idx < items.length - 1 ? 'border-b border-border/30' : ''}`}>
+                          <div className="col-span-5">
+                            <p className="font-medium truncate">{it.equipment_name as string}</p>
+                            {it.description && <p className="text-xs text-muted-foreground truncate">{it.description as string}</p>}
+                          </div>
+                          <div className="col-span-2">
+                            {it.unit_sku_code
+                              ? <span className="font-mono text-xs text-violet-400 bg-violet-500/10 px-1.5 py-0.5 rounded">{it.unit_sku_code as string}</span>
+                              : <span className="text-xs text-muted-foreground">—</span>
+                            }
+                          </div>
+                          <div className="col-span-2 text-center">
+                            <span className="text-xs">${Number(it.unit_rate).toFixed(2)}</span>
+                            <span className="text-[10px] text-muted-foreground ml-0.5">
+                              {PRICING_SHORT[it.pricing_type as string] || ''}
+                            </span>
+                          </div>
+                          <div className="col-span-1 text-center text-xs text-muted-foreground">
+                            {Number(it.quantity)}
+                          </div>
+                          <div className="col-span-2 text-right font-semibold text-cyan-400">
+                            ${Number(it.line_total).toFixed(2)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* ── Totals ── */}
+                  <div className="mt-4 space-y-1.5 text-sm ml-auto max-w-56">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Subtotal</span><span>${subtotal.toFixed(2)}</span>
+                    </div>
+                    {discount > 0 && (
+                      <div className="flex justify-between text-rose-400">
+                        <span>Discount</span><span>−${discount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {taxRate > 0 && (
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Tax ({taxRate}%)</span><span>+${taxAmt.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {Number(inv.security_deposit) > 0 && (
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Security Deposit</span><span>${Number(inv.security_deposit).toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between font-bold text-base text-cyan-400 border-t border-border/40 pt-2 mt-2">
+                      <span>Total Due</span>
+                      <span>${grandTotal.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  {inv.notes && (
+                    <div className="mt-4 p-3 rounded-lg bg-muted/30 border border-border/40 text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground">Notes: </span>{inv.notes as string}
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Status actions footer ── */}
+                <div className="px-6 py-4 border-t border-border/40 bg-muted/10 rounded-b-lg">
+                  <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Update Status</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {(['pending','active','completed','cancelled'] as const).map(s => {
+                      const isCurrent = inv.status === s;
+                      const colors: Record<string, string> = {
+                        pending:   'border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10',
+                        active:    'border-green-500/50  text-green-400  hover:bg-green-500/10',
+                        completed: 'border-blue-500/50   text-blue-400   hover:bg-blue-500/10',
+                        cancelled: 'border-gray-500/50   text-gray-400   hover:bg-gray-500/10',
+                      };
+                      return (
+                        <Button key={s} size="sm" variant="outline"
+                          className={`capitalize text-xs transition-all ${isCurrent ? 'bg-violet-600 border-violet-500 text-white hover:bg-violet-700' : colors[s]}`}
+                          onClick={() => {
+                            updateStatusMutation.mutate({ id: inv.id as string, status: s });
+                            setViewingId(null);
+                          }}>
+                          {isCurrent && <CheckCircle2 className="h-3 w-3 mr-1"/>}
+                          {s}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })() : null}
         </DialogContent>
       </Dialog>
     </div>

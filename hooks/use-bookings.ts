@@ -86,3 +86,14 @@ export function useBookings(filters: BookingFilters = {}) {
     EMPTY_FORM: {} as CreateBookingPayload,
   };
 }
+
+export function useBookingById(id: string | null) {
+  return useQuery({
+    queryKey: ['booking', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/bookings/${id}`);
+      return data.data as Record<string, unknown>;
+    },
+    enabled: !!id,
+  });
+}
