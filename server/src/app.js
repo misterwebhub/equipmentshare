@@ -26,7 +26,11 @@ app.use('/api/reports',     require('./routes/reports.routes'));
 app.use('/api/users',       require('./routes/users.routes'));
 app.use('/api/settings',    require('./routes/settings.routes'));
 app.use('/api/calendar',    require('./routes/calendar.routes'));
-app.use('/api/superadmin',  require('./routes/superadmin.routes'));
+app.use('/api/superadmin',        require('./routes/superadmin.routes'));
+app.use('/api/notifications',     require('./routes/notifications.routes'));
+app.use('/api/condition-reports', require('./routes/condition-reports.routes'));
+app.use('/api/support-tickets',   require('./routes/support-tickets.routes'));
+app.use('/api/activity',          require('./routes/activity.routes'));
 
 app.use(errorHandler);
 

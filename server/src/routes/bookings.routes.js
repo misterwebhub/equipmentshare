@@ -9,6 +9,7 @@ router.get('/availability',                                          ctrl.checkA
 router.get('/',                                                       ctrl.list);
 router.get('/:id',                                                    ctrl.getById);
 router.post('/',       requireRole('admin','manager','operator'),     ctrl.create);
-router.patch('/:id/status', requireRole('admin','manager','operator'), ctrl.updateStatus);
+router.patch('/:id/status',  requireRole('admin','manager','operator'), ctrl.updateStatus);
+router.patch('/:id/convert', requireRole('admin','manager','operator'), ctrl.convertQuotation);
 
 module.exports = router;

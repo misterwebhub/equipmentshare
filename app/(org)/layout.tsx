@@ -8,25 +8,60 @@ import { Badge } from '@/components/ui/badge';
 import {
   LayoutDashboard, Package, CalendarDays, Users, Wrench,
   BarChart3, Settings, LogOut, Menu, X, Tag, AlertTriangle,
-  UserCheck, ChevronRight, Cpu, Layers,
+  UserCheck, ChevronRight, Cpu, Layers, Bell, HeartPulse,
+  LifeBuoy, Activity, FileBarChart2, Shield,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Moon, Sun } from 'lucide-react';
 
-const NAV = [
-  { href: '/dashboard',   label: 'Dashboard',   icon: LayoutDashboard, color: 'oklch(0.70 0.28 270)' },
-  { href: '/equipment',   label: 'Equipment',   icon: Package,         color: 'oklch(0.78 0.22 195)' },
-  { href: '/fleet',       label: 'Fleet',       icon: Layers,          color: 'oklch(0.72 0.26 280)' },
-  { href: '/categories',  label: 'Categories',  icon: Tag,             color: 'oklch(0.76 0.26 50)'  },
-  { href: '/customers',   label: 'Customers',   icon: UserCheck,       color: 'oklch(0.76 0.22 155)' },
-  { href: '/bookings',    label: 'Bookings',    icon: CalendarDays,    color: 'oklch(0.68 0.26 250)' },
-  { href: '/calendar',    label: 'Calendar',    icon: CalendarDays,    color: 'oklch(0.74 0.20 178)' },
-  { href: '/penalties',   label: 'Penalties',   icon: AlertTriangle,   color: 'oklch(0.68 0.26 30)'  },
-  { href: '/maintenance', label: 'Maintenance', icon: Wrench,          color: 'oklch(0.84 0.22 75)'  },
-  { href: '/reports',     label: 'Reports',     icon: BarChart3,       color: 'oklch(0.76 0.26 350)' },
-  { href: '/users',       label: 'Users',       icon: Users,           color: 'oklch(0.66 0.26 295)' },
-  { href: '/settings',    label: 'Settings',    icon: Settings,        color: 'oklch(0.55 0.04 255)'  },
+const NAV_SECTIONS = [
+  {
+    label: 'Core',
+    items: [
+      { href: '/dashboard',   label: 'Dashboard',   icon: LayoutDashboard, color: 'oklch(0.70 0.28 270)' },
+      { href: '/equipment',   label: 'Equipment',   icon: Package,         color: 'oklch(0.78 0.22 195)' },
+      { href: '/fleet',       label: 'Fleet',       icon: Layers,          color: 'oklch(0.72 0.26 280)' },
+      { href: '/categories',  label: 'Categories',  icon: Tag,             color: 'oklch(0.76 0.26 50)'  },
+    ],
+  },
+  {
+    label: 'Operations',
+    items: [
+      { href: '/customers',   label: 'Customers',   icon: UserCheck,       color: 'oklch(0.76 0.22 155)' },
+      { href: '/bookings',    label: 'Bookings',    icon: CalendarDays,    color: 'oklch(0.68 0.26 250)' },
+      { href: '/calendar',    label: 'Calendar',    icon: CalendarDays,    color: 'oklch(0.74 0.20 178)' },
+      { href: '/penalties',   label: 'Penalties',   icon: AlertTriangle,   color: 'oklch(0.68 0.26 30)'  },
+      { href: '/maintenance', label: 'Maintenance', icon: Wrench,          color: 'oklch(0.84 0.22 75)'  },
+    ],
+  },
+  {
+    label: 'Insights',
+    items: [
+      { href: '/analytics',       label: 'Analytics',       icon: BarChart3,    color: 'oklch(0.76 0.26 350)' },
+      { href: '/reports',         label: 'Reports',         icon: FileBarChart2, color: 'oklch(0.74 0.24 160)' },
+      { href: '/equipment-health',label: 'Equip. Health',   icon: HeartPulse,   color: 'oklch(0.68 0.30 20)'  },
+      { href: '/damage-reports',  label: 'Damage Reports',  icon: Shield,       color: 'oklch(0.65 0.28 30)'  },
+    ],
+  },
+  {
+    label: 'Team',
+    items: [
+      { href: '/notifications', label: 'Notifications', icon: Bell,     color: 'oklch(0.80 0.22 90)'  },
+      { href: '/support',       label: 'Support',       icon: LifeBuoy, color: 'oklch(0.72 0.24 240)' },
+      { href: '/activity',      label: 'Activity',      icon: Activity, color: 'oklch(0.70 0.22 155)' },
+      { href: '/users',         label: 'Users',         icon: Users,    color: 'oklch(0.66 0.26 295)' },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { href: '/settings', label: 'Settings', icon: Settings, color: 'oklch(0.55 0.04 255)' },
+    ],
+  },
 ];
+
+// Flat list for active detection
+const NAV = NAV_SECTIONS.flatMap(s => s.items);
 
 export default function OrgLayout({ children }: { children: React.ReactNode }) {
   const { user, org, logout, loading } = useAuth();
@@ -104,30 +139,36 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5 futuristic-scroll">
-          {NAV.map(({ href, label, icon: Icon, color }) => {
-            const active = pathname === href || pathname.startsWith(href + '/');
-            return (
-              <Link key={href} href={href} onClick={() => setSidebarOpen(false)}
-                className={`
-                  group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
-                  transition-all duration-150
-                  ${active ? 'nav-active font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'}
-                `}
-                style={active ? { paddingLeft: '10px' } : {}}
-              >
-                <div className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 transition-all ${active ? 'shadow-md' : 'opacity-60 group-hover:opacity-100'}`}
-                  style={active
-                    ? { background: `linear-gradient(135deg, ${color}, ${color}aa)`, boxShadow: `0 4px 12px ${color}50` }
-                    : { background: `${color}18` }
-                  }>
-                  <Icon className="h-3.5 w-3.5" style={{ color: active ? 'white' : color }} />
-                </div>
-                <span className="flex-1">{label}</span>
-                {active && <ChevronRight className="h-3 w-3 opacity-50" style={{ color }} />}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 overflow-y-auto px-2 py-3 futuristic-scroll">
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.label} className="mb-3">
+              <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">{section.label}</p>
+              <div className="space-y-0.5">
+                {section.items.map(({ href, label, icon: Icon, color }) => {
+                  const active = pathname === href || pathname.startsWith(href + '/');
+                  return (
+                    <Link key={href} href={href} onClick={() => setSidebarOpen(false)}
+                      className={`
+                        group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
+                        transition-all duration-150
+                        ${active ? 'nav-active font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'}
+                      `}
+                    >
+                      <div className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 transition-all ${active ? 'shadow-md' : 'opacity-60 group-hover:opacity-100'}`}
+                        style={active
+                          ? { background: `linear-gradient(135deg, ${color}, ${color}aa)`, boxShadow: `0 4px 12px ${color}50` }
+                          : { background: `${color}18` }
+                        }>
+                        <Icon className="h-3.5 w-3.5" style={{ color: active ? 'white' : color }} />
+                      </div>
+                      <span className="flex-1">{label}</span>
+                      {active && <ChevronRight className="h-3 w-3 opacity-50" style={{ color }} />}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* Footer */}

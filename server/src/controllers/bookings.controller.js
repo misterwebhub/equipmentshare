@@ -129,7 +129,7 @@ async function create(req, res) {
     const {
       customer_id, assigned_user_id, start_date, end_date,
       security_deposit, notes, status,
-      discount, tax_rate,
+      discount, tax_rate, is_quotation, quotation_expires_at,
       items, // [{ equipment_id, equipment_unit_id?, description?, pricing_type, unit_rate, quantity }]
     } = req.body;
 
@@ -165,14 +165,15 @@ async function create(req, res) {
 
     await pool.execute(
       `INSERT INTO bookings (id,org_id,customer_id,equipment_id,assigned_user_id,start_date,end_date,
-         estimated_cost,security_deposit,discount,tax_rate,notes,status,invoice_number)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+         estimated_cost,security_deposit,discount,tax_rate,notes,status,invoice_number,is_quotation,quotation_expires_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         id, req.orgId, customer_id, primaryEquipmentId, assigned_user_id || null,
         start_date, end_date, estimatedCost,
         parseFloat(security_deposit) || 0,
         discountAmt, parseFloat(tax_rate) || 0,
-        notes || '', status || 'pending', invoiceNumber,
+        notes || '', is_quotation ? 'pending' : (status || 'pending'), invoiceNumber,
+        is_quotation ? 1 : 0, quotation_expires_at || null,
       ]
     );
 
@@ -219,6 +220,20 @@ async function updateStatus(req, res) {
   }
 }
 
+/* ── CONVERT QUOTATION TO BOOKING ────────────────────────────────── */
+async function convertQuotation(req, res) {
+  try {
+    const [rows] = await pool.execute('SELECT * FROM bookings WHERE id=? AND org_id=?', [req.params.id, req.orgId]);
+    if (!rows.length) return res.status(404).json({ success: false, message: 'Not found' });
+    if (!rows[0].is_quotation) return res.status(400).json({ success: false, message: 'Not a quotation' });
+    await pool.execute(
+      'UPDATE bookings SET is_quotation=0, status="pending" WHERE id=? AND org_id=?',
+      [req.params.id, req.orgId]
+    );
+    res.json({ success: true, message: 'Converted to booking' });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+}
+
 /* ── CHECK AVAILABILITY (legacy) ─────────────────────────────────── */
 async function checkAvailability(req, res) {
   try {
@@ -235,4 +250,4 @@ async function checkAvailability(req, res) {
   }
 }
 
-module.exports = { list, checkAvailability, getById, create, updateStatus };
+module.exports = { list, checkAvailability, getById, create, updateStatus, convertQuotation };

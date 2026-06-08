@@ -12,7 +12,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, CalendarDays, Eye, Trash2, FileText, Package, CheckCircle2, Clock, Wrench, AlertTriangle, Building2, User, Hash, Calendar, DollarSign, Tag } from 'lucide-react';
+import { Plus, Search, CalendarDays, Eye, Trash2, FileText, Package, CheckCircle2, Clock, Wrench, AlertTriangle, Building2, User, Hash, Calendar, DollarSign, Tag, ArrowRightCircle } from 'lucide-react';
+import api from '@/lib/api';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 /* ── Types ─────────────────────────────────────────────────────────── */
@@ -203,6 +206,7 @@ const EMPTY_HEADER = {
   customer_id: '', assigned_user_id: '',
   start_date: '', end_date: '',
   security_deposit: '0', discount: '0', tax_rate: '0', notes: '', status: 'pending',
+  is_quotation: false, quotation_expires_at: '',
 };
 
 function newLine(): LineItem {
@@ -214,6 +218,7 @@ export default function BookingsPage() {
   const [statusFilter, setStatus] = useState('all');
   const [open, setOpen]           = useState(false);
   const [viewingId, setViewingId] = useState<string | null>(null);
+  const qc = useQueryClient();
 
   const [header, setHeader]   = useState(EMPTY_HEADER);
   const [lines, setLines]     = useState<LineItem[]>([newLine()]);
@@ -250,9 +255,22 @@ export default function BookingsPage() {
       quantity: parseFloat(l.quantity) || 1,
     }));
     createMutation.mutate(
-      { ...header, items, estimated_cost: grandTotal, discount, tax_rate: taxRate } as never,
+      { ...header, items, estimated_cost: grandTotal, discount, tax_rate: taxRate,
+        is_quotation: header.is_quotation, quotation_expires_at: header.quotation_expires_at || undefined } as never,
       { onSuccess: () => { setOpen(false); setHeader(EMPTY_HEADER); setLines([newLine()]); } }
     );
+  };
+
+  const handleConvertQuotation = async (id: string) => {
+    try {
+      await api.patch(`/bookings/${id}/convert`, {});
+      qc.invalidateQueries({ queryKey: ['bookings'] });
+      qc.invalidateQueries({ queryKey: ['booking', id] });
+      toast.success('Quotation converted to booking!');
+      setViewingId(null);
+    } catch {
+      toast.error('Failed to convert quotation');
+    }
   };
 
   const canCreate = !!(header.customer_id && header.start_date && header.end_date && lines.some(l => l.equipment_id));
@@ -276,10 +294,16 @@ export default function BookingsPage() {
           <h1 className="text-2xl font-bold gradient-text">Bookings</h1>
           <p className="text-muted-foreground">{(bookings as unknown[]).length} invoices</p>
         </div>
-        <Button onClick={() => { setHeader(EMPTY_HEADER); setLines([newLine()]); setOpen(true); }}
-          className="bg-violet-600 hover:bg-violet-700">
-          <Plus className="h-4 w-4 mr-2" />New Booking
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => { setHeader({ ...EMPTY_HEADER, is_quotation: true }); setLines([newLine()]); setOpen(true); }}
+            className="border-amber-500/50 text-amber-400 hover:bg-amber-500/10">
+            <FileText className="h-4 w-4 mr-2" />Quotation
+          </Button>
+          <Button onClick={() => { setHeader(EMPTY_HEADER); setLines([newLine()]); setOpen(true); }}
+            className="bg-violet-600 hover:bg-violet-700">
+            <Plus className="h-4 w-4 mr-2" />New Booking
+          </Button>
+        </div>
       </div>
 
       {/* Status summary */}
@@ -353,7 +377,13 @@ export default function BookingsPage() {
                     ${(b.estimated_cost as number)?.toLocaleString(undefined,{minimumFractionDigits:2}) ?? '—'}
                   </TableCell>
                   <TableCell>
-                    <Badge className={`text-xs capitalize border ${STATUS_COLORS[b.status as string]||''}`} variant="outline">{b.status as string}</Badge>
+                    {b.is_quotation ? (
+                      <Badge className="text-xs border" style={{ background: 'oklch(0.80 0.22 90 / 0.1)', color: 'oklch(0.75 0.22 90)', borderColor: 'oklch(0.80 0.22 90 / 0.35)' }}>
+                        📋 Quotation
+                      </Badge>
+                    ) : (
+                      <Badge className={`text-xs capitalize border ${STATUS_COLORS[b.status as string]||''}`} variant="outline">{b.status as string}</Badge>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-violet-400 hover:text-violet-300"
@@ -374,14 +404,23 @@ export default function BookingsPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-violet-400" />
-              New Booking / Invoice
+              {header.is_quotation ? 'New Quotation' : 'New Booking / Invoice'}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-5">
             {/* ── Invoice header ── */}
             <div className="grid grid-cols-2 gap-4 p-4 rounded-xl border border-border/50 bg-muted/10">
-              <h3 className="col-span-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Invoice Details</h3>
+              <div className="col-span-2 flex items-center justify-between">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Invoice Details</h3>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <div className={`relative inline-flex h-5 w-10 rounded-full transition-colors ${header.is_quotation ? 'bg-amber-500' : 'bg-muted'}`}
+                    onClick={() => setHeader(p => ({ ...p, is_quotation: !p.is_quotation }))}>
+                    <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${header.is_quotation ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  </div>
+                  <span className="text-xs font-medium">{header.is_quotation ? '📋 Quotation Mode' : 'Booking Mode'}</span>
+                </label>
+              </div>
 
               <div className="space-y-1">
                 <Label className="text-xs">Customer *</Label>
@@ -415,7 +454,14 @@ export default function BookingsPage() {
                 <Input className="h-9" type="date" value={header.end_date} onChange={setH('end_date')}/>
               </div>
 
-              <div className="space-y-1 col-span-2">
+              {header.is_quotation && (
+                <div className="space-y-1">
+                  <Label className="text-xs">Quotation Expires</Label>
+                  <Input className="h-9" type="date" value={header.quotation_expires_at}
+                    onChange={e => setHeader(p => ({ ...p, quotation_expires_at: e.target.value }))} />
+                </div>
+              )}
+              <div className={`space-y-1 ${header.is_quotation ? '' : 'col-span-2'}`}>
                 <Label className="text-xs">Notes</Label>
                 <Input className="h-9" placeholder="Any notes for this invoice…" value={header.notes} onChange={setH('notes')}/>
               </div>
@@ -485,8 +531,8 @@ export default function BookingsPage() {
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
             <Button onClick={handleCreate} disabled={!canCreate || createMutation.isPending}
-              className="bg-violet-600 hover:bg-violet-700">
-              {createMutation.isPending ? 'Creating…' : `Create Invoice · $${grandTotal.toFixed(2)}`}
+              className={header.is_quotation ? 'bg-amber-600 hover:bg-amber-700' : 'bg-violet-600 hover:bg-violet-700'}>
+              {createMutation.isPending ? 'Creating…' : header.is_quotation ? `Save Quotation · $${grandTotal.toFixed(2)}` : `Create Invoice · $${grandTotal.toFixed(2)}`}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -494,7 +540,7 @@ export default function BookingsPage() {
 
       {/* ── Invoice Detail Dialog ── */}
       <Dialog open={!!viewingId} onOpenChange={() => setViewingId(null)}>
-        <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0">
+        <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto p-0">
           {invoiceLoading ? (
             <div className="flex items-center justify-center h-48">
               <div className="h-8 w-8 rounded-full border-2 border-violet-500 border-t-transparent animate-spin"/>
@@ -539,11 +585,17 @@ export default function BookingsPage() {
                       </p>
                     </div>
 
-                    {/* Right: status badge */}
-                    <div className="mt-1">
-                      <Badge className={`text-sm font-semibold capitalize border px-3 py-1 ${STATUS_COLORS[statusKey]||''}`} variant="outline">
-                        {statusKey}
-                      </Badge>
+                    {/* Right: status + quotation badge */}
+                    <div className="mt-1 flex flex-col items-end gap-2">
+                      {inv.is_quotation ? (
+                        <Badge className="text-sm font-semibold border px-3 py-1" style={{ background: 'oklch(0.80 0.22 90 / 0.15)', color: 'oklch(0.75 0.22 90)', borderColor: 'oklch(0.80 0.22 90 / 0.4)' }}>
+                          📋 Quotation
+                        </Badge>
+                      ) : (
+                        <Badge className={`text-sm font-semibold capitalize border px-3 py-1 ${STATUS_COLORS[statusKey]||''}`} variant="outline">
+                          {statusKey}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -658,29 +710,53 @@ export default function BookingsPage() {
 
                 {/* ── Status actions footer ── */}
                 <div className="px-6 py-4 border-t border-border/40 bg-muted/10 rounded-b-lg">
-                  <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Update Status</p>
-                  <div className="flex gap-2 flex-wrap">
-                    {(['pending','active','completed','cancelled'] as const).map(s => {
-                      const isCurrent = inv.status === s;
-                      const colors: Record<string, string> = {
-                        pending:   'border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10',
-                        active:    'border-green-500/50  text-green-400  hover:bg-green-500/10',
-                        completed: 'border-blue-500/50   text-blue-400   hover:bg-blue-500/10',
-                        cancelled: 'border-gray-500/50   text-gray-400   hover:bg-gray-500/10',
-                      };
-                      return (
-                        <Button key={s} size="sm" variant="outline"
-                          className={`capitalize text-xs transition-all ${isCurrent ? 'bg-violet-600 border-violet-500 text-white hover:bg-violet-700' : colors[s]}`}
-                          onClick={() => {
-                            updateStatusMutation.mutate({ id: inv.id as string, status: s });
-                            setViewingId(null);
-                          }}>
-                          {isCurrent && <CheckCircle2 className="h-3 w-3 mr-1"/>}
-                          {s}
+                  {inv.is_quotation ? (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Quotation Actions</p>
+                      <div className="flex gap-2 flex-wrap items-center">
+                        <Button size="sm" className="gap-1.5 bg-violet-600 hover:bg-violet-700 text-white"
+                          onClick={() => handleConvertQuotation(inv.id as string)}>
+                          <ArrowRightCircle className="h-3.5 w-3.5"/>
+                          Convert to Booking
                         </Button>
-                      );
-                    })}
-                  </div>
+                        <Button size="sm" variant="outline" className="text-xs border-gray-500/50 text-gray-400 hover:bg-gray-500/10"
+                          onClick={() => { updateStatusMutation.mutate({ id: inv.id as string, status: 'cancelled' }); setViewingId(null); }}>
+                          Cancel Quotation
+                        </Button>
+                        {inv.quotation_expires_at && (
+                          <span className="text-xs text-muted-foreground ml-auto">
+                            Expires: {format(new Date(inv.quotation_expires_at as string), 'MMM d, yyyy')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Update Status</p>
+                      <div className="flex gap-2 flex-wrap">
+                        {(['pending','active','completed','cancelled'] as const).map(s => {
+                          const isCurrent = inv.status === s;
+                          const colors: Record<string, string> = {
+                            pending:   'border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10',
+                            active:    'border-green-500/50  text-green-400  hover:bg-green-500/10',
+                            completed: 'border-blue-500/50   text-blue-400   hover:bg-blue-500/10',
+                            cancelled: 'border-gray-500/50   text-gray-400   hover:bg-gray-500/10',
+                          };
+                          return (
+                            <Button key={s} size="sm" variant="outline"
+                              className={`capitalize text-xs transition-all ${isCurrent ? 'bg-violet-600 border-violet-500 text-white hover:bg-violet-700' : colors[s]}`}
+                              onClick={() => {
+                                updateStatusMutation.mutate({ id: inv.id as string, status: s });
+                                setViewingId(null);
+                              }}>
+                              {isCurrent && <CheckCircle2 className="h-3 w-3 mr-1"/>}
+                              {s}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             );
