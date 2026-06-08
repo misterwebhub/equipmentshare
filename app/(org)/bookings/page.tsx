@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useBookings, BookingForm } from '@/hooks/use-bookings';
 import { useEquipment } from '@/hooks/use-equipment';
 import { useCustomers } from '@/hooks/use-customers';
+import { useAvailableUnits } from '@/hooks/use-equipment-units';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,7 +29,7 @@ export default function BookingsPage() {
   const [open, setOpen] = useState(false);
   const [viewing, setViewing] = useState<Record<string, unknown> | null>(null);
   const [form, setForm] = useState<BookingForm>({
-    customer_id: '', equipment_id: '', assigned_user_id: '',
+    customer_id: '', equipment_id: '', equipment_unit_id: '', assigned_user_id: '',
     start_date: '', end_date: '', pricing_type: 'fixed',
     fixed_rate: '', hourly_rate: '', hours_used: '',
     estimated_cost: '', security_deposit: '', notes: '', status: 'pending',
@@ -38,18 +39,26 @@ export default function BookingsPage() {
   const { equipment } = useEquipment();
   const { customers } = useCustomers();
 
+  // Available SKU units for the selected equipment + date range
+  const { data: availableUnits = [] } = useAvailableUnits(
+    form.equipment_id || null,
+    form.start_date,
+    form.end_date,
+  );
+
   const onEquipmentChange = (id: string) => {
     const eq = (equipment as Record<string, unknown>[]).find(e => e.id === id);
     if (eq) {
       setForm(p => ({
         ...p,
         equipment_id: id,
+        equipment_unit_id: '', // reset SKU when equipment changes
         pricing_type: (eq.pricing_type as string) || 'fixed',
         fixed_rate: eq.fixed_rate != null ? String(eq.fixed_rate) : '',
         hourly_rate: eq.hourly_rate != null ? String(eq.hourly_rate) : '',
       }));
     } else {
-      setForm(p => ({ ...p, equipment_id: id }));
+      setForm(p => ({ ...p, equipment_id: id, equipment_unit_id: '' }));
     }
   };
 
@@ -122,7 +131,10 @@ export default function BookingsPage() {
             <TableBody>
               {filtered.map(b => (
                 <TableRow key={b.id as string}>
-                  <TableCell className="font-medium">{b.equipment_name as string}</TableCell>
+                  <TableCell className="font-medium">
+                    {b.equipment_name as string}
+                    {b.equipment_sku_code && <span className="ml-1.5 text-xs font-mono text-violet-400 bg-violet-500/10 px-1 rounded">{b.equipment_sku_code as string}</span>}
+                  </TableCell>
                   <TableCell>{b.customer_name as string}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {format(new Date(b.start_date as string), 'MMM d')} – {format(new Date(b.end_date as string), 'MMM d, yyyy')}
@@ -172,6 +184,34 @@ export default function BookingsPage() {
               <div className="space-y-2"><Label>Start Date *</Label><Input type="date" value={form.start_date} onChange={set('start_date')} /></div>
               <div className="space-y-2"><Label>End Date *</Label><Input type="date" value={form.end_date} onChange={set('end_date')} /></div>
             </div>
+
+            {/* SKU unit selector — shown only when equipment + dates are selected and units exist */}
+            {form.equipment_id && form.start_date && form.end_date && (
+              <div className="space-y-2">
+                <Label>
+                  SKU Unit
+                  {availableUnits.length > 0 ? (
+                    <span className="ml-2 text-xs text-green-400">({availableUnits.length} available)</span>
+                  ) : (
+                    <span className="ml-2 text-xs text-muted-foreground">(no tracked units — booking equipment-level)</span>
+                  )}
+                </Label>
+                {availableUnits.length > 0 && (
+                  <Select value={form.equipment_unit_id} onValueChange={(v) => setForm(p => ({ ...p, equipment_unit_id: v === 'none' ? '' : v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select a SKU unit (optional)" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— No specific unit —</SelectItem>
+                      {availableUnits.map(u => (
+                        <SelectItem key={u.id} value={u.id}>
+                          <span className="font-mono">{u.sku_code}</span>
+                          {u.notes ? ` · ${u.notes}` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Pricing Type</Label>
               <Select value={form.pricing_type} onValueChange={(v) => setForm(p => ({ ...p, pricing_type: v }))}>
@@ -223,7 +263,11 @@ export default function BookingsPage() {
           {viewing && (
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><p className="text-muted-foreground">Equipment</p><p className="font-medium">{viewing.equipment_name as string}</p></div>
+                <div>
+                  <p className="text-muted-foreground">Equipment</p>
+                  <p className="font-medium">{viewing.equipment_name as string}</p>
+                  {viewing.equipment_sku_code && <p className="text-xs font-mono text-violet-400">{viewing.equipment_sku_code as string}</p>}
+                </div>
                 <div><p className="text-muted-foreground">Customer</p><p className="font-medium">{viewing.customer_name as string}</p></div>
                 <div><p className="text-muted-foreground">Start Date</p><p className="font-medium">{format(new Date(viewing.start_date as string), 'MMM d, yyyy')}</p></div>
                 <div><p className="text-muted-foreground">End Date</p><p className="font-medium">{format(new Date(viewing.end_date as string), 'MMM d, yyyy')}</p></div>

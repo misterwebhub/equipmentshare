@@ -28,7 +28,8 @@
       "Bash(git commit -m ' *)",
       "Bash(git commit -m 'fix: load Google Fonts via next/font instead of CSS @import *)",
       "Bash(git remote *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(node server/src/database/migrate.js)"
     ]
   }
 }

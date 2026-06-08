@@ -113,6 +113,20 @@ const migrations = [
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
   )`,
 
+  `CREATE TABLE IF NOT EXISTS equipment_units (
+    id VARCHAR(36) PRIMARY KEY,
+    org_id VARCHAR(36) NOT NULL,
+    equipment_id VARCHAR(36) NOT NULL,
+    sku_code VARCHAR(100) NOT NULL,
+    status ENUM('available','rented-out','maintenance','damaged','retired') DEFAULT 'available',
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_sku_org (org_id, sku_code),
+    FOREIGN KEY (org_id) REFERENCES organisations(id) ON DELETE CASCADE,
+    FOREIGN KEY (equipment_id) REFERENCES equipment(id) ON DELETE CASCADE
+  )`,
+
   `CREATE TABLE IF NOT EXISTS customers (
     id VARCHAR(36) PRIMARY KEY,
     org_id VARCHAR(36) NOT NULL,
@@ -134,6 +148,7 @@ const migrations = [
     org_id VARCHAR(36) NOT NULL,
     customer_id VARCHAR(36) NOT NULL,
     equipment_id VARCHAR(36) NOT NULL,
+    equipment_unit_id VARCHAR(36),
     assigned_user_id VARCHAR(36),
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,

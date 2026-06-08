@@ -13,6 +13,7 @@ export interface BookingFilters {
 const EMPTY_FORM = {
   customer_id: '',
   equipment_id: '',
+  equipment_unit_id: '',
   assigned_user_id: '',
   start_date: '',
   end_date: '',
@@ -54,6 +55,7 @@ export function useBookings(filters: Partial<BookingFilters> = {}) {
         estimated_cost: form.estimated_cost ? Number(form.estimated_cost) : 0,
         security_deposit: form.security_deposit ? Number(form.security_deposit) : 0,
         assigned_user_id: form.assigned_user_id || null,
+        equipment_unit_id: (form as BookingForm & { equipment_unit_id?: string }).equipment_unit_id || null,
       }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['bookings'] }); toast.success('Booking created'); },
     onError: (e: unknown) => toast.error((e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error creating booking'),

@@ -6,12 +6,12 @@ import { Package, CalendarDays, DollarSign, AlertTriangle, Wrench, TrendingUp } 
 import { format } from 'date-fns';
 
 const STAT_CARDS = [
-  { key: (s: Record<string,unknown>) => s?.equipment  ? (s.equipment as Record<string,unknown>).total  : 0, label: 'Total Equipment',    icon: Package,       grad: 'stat-violet', glow: 'glow-violet' },
-  { key: (s: Record<string,unknown>) => s?.equipment  ? (s.equipment as Record<string,unknown>).available : 0, label: 'Available',        icon: TrendingUp,    grad: 'stat-cyan',   glow: 'glow-cyan'   },
-  { key: (s: Record<string,unknown>) => s?.bookings   ? (s.bookings  as Record<string,unknown>).active  : 0, label: 'Active Bookings',   icon: CalendarDays,  grad: 'stat-green',  glow: 'glow-green'  },
+  { key: (s: Record<string,unknown>) => s?.equipment  ? (s.equipment as Record<string,unknown>).total_units  : 0, label: 'Total Units',       icon: Package,       grad: 'stat-violet', glow: 'glow-violet' },
+  { key: (s: Record<string,unknown>) => s?.equipment  ? (s.equipment as Record<string,unknown>).available    : 0, label: 'Available Units',   icon: TrendingUp,    grad: 'stat-cyan',   glow: 'glow-cyan'   },
+  { key: (s: Record<string,unknown>) => s?.equipment  ? (s.equipment as Record<string,unknown>).rented       : 0, label: 'Rented Out',        icon: CalendarDays,  grad: 'stat-green',  glow: 'glow-green'  },
   { key: (s: Record<string,unknown>) => `$${((s?.revenue as Record<string,unknown>)?.month_revenue ?? 0).toLocaleString()}`, label: 'Month Revenue', icon: DollarSign, grad: 'stat-amber', glow: 'glow-amber' },
-  { key: (s: Record<string,unknown>) => `$${((s?.penalties as Record<string,unknown>)?.pending_penalties ?? 0).toLocaleString()}`, label: 'Penalties', icon: AlertTriangle, grad: 'stat-rose', glow: 'glow-rose' },
-  { key: (s: Record<string,unknown>) => s?.maintenance_alerts ?? 0, label: 'Maintenance Alerts', icon: Wrench, grad: 'stat-pink', glow: 'glow-pink' },
+  { key: (s: Record<string,unknown>) => s?.equipment  ? (s.equipment as Record<string,unknown>).maintenance  : 0, label: 'In Maintenance',    icon: Wrench,        grad: 'stat-rose',   glow: 'glow-rose'   },
+  { key: (s: Record<string,unknown>) => s?.maintenance_alerts ?? 0,                                               label: 'Maint. Alerts',     icon: AlertTriangle, grad: 'stat-pink',   glow: 'glow-pink'   },
 ];
 
 const BOOKING_STATUS: Record<string, string> = {

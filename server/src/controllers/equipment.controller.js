@@ -4,7 +4,11 @@ const { pool } = require('../config/database');
 async function list(req, res) {
   try {
     const { search, status, category_id, page = 1, limit = 50 } = req.query;
-    let sql = `SELECT e.*, c.name as category_name, c.color as category_color, u.name as assigned_user_name
+    let sql = `SELECT e.*, c.name as category_name, c.color as category_color, u.name as assigned_user_name,
+               (SELECT COUNT(*) FROM equipment_units eu WHERE eu.equipment_id=e.id) as total_units,
+               (SELECT COUNT(*) FROM equipment_units eu WHERE eu.equipment_id=e.id AND eu.status='available') as available_units,
+               (SELECT COUNT(*) FROM equipment_units eu WHERE eu.equipment_id=e.id AND eu.status='rented-out') as rented_units,
+               (SELECT COUNT(*) FROM equipment_units eu WHERE eu.equipment_id=e.id AND eu.status='maintenance') as maintenance_units
                FROM equipment e
                LEFT JOIN categories c ON e.category_id = c.id
                LEFT JOIN users u ON e.assigned_user_id = u.id
@@ -52,6 +56,7 @@ async function create(req, res) {
       name, description, category_id, serial_number, location, condition,
       pricing_type, fixed_rate, billing_period, hourly_rate,
       min_rental_days, security_deposit, certifications, specifications,
+      skus, // array of { sku_code, notes? }
     } = req.body;
     if (!name) return res.status(400).json({ success: false, message: 'Name is required' });
 
@@ -67,11 +72,30 @@ async function create(req, res) {
         JSON.stringify(certifications || []), JSON.stringify(specifications || {}),
       ]
     );
+
+    // Create SKU units if provided
+    const skuErrors = [];
+    if (Array.isArray(skus) && skus.length) {
+      for (const sku of skus) {
+        if (!sku.sku_code?.trim()) continue;
+        try {
+          await pool.execute(
+            'INSERT INTO equipment_units (id,org_id,equipment_id,sku_code,notes) VALUES (?,?,?,?,?)',
+            [uuidv4(), req.orgId, id, sku.sku_code.trim().toUpperCase(), sku.notes || '']
+          );
+        } catch (e) {
+          skuErrors.push(`SKU ${sku.sku_code}: ${e.message}`);
+        }
+      }
+    }
+
     const [rows] = await pool.execute(
-      'SELECT e.*, c.name as category_name FROM equipment e LEFT JOIN categories c ON e.category_id=c.id WHERE e.id=?',
+      `SELECT e.*, c.name as category_name,
+         (SELECT COUNT(*) FROM equipment_units eu WHERE eu.equipment_id=e.id) as total_units
+       FROM equipment e LEFT JOIN categories c ON e.category_id=c.id WHERE e.id=?`,
       [id]
     );
-    res.status(201).json({ success: true, data: rows[0] });
+    res.status(201).json({ success: true, data: rows[0], sku_errors: skuErrors });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
