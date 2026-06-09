@@ -28,6 +28,9 @@ const NAV = [
   { href: '/settings',    label: 'Settings',    icon: Settings,        color: 'oklch(0.55 0.04 255)'  },
 ];
 
+// Flat list for active detection
+const NAV = NAV_SECTIONS.flatMap(s => s.items);
+
 export default function OrgLayout({ children }: { children: React.ReactNode }) {
   const { user, org, logout, loading } = useAuth();
   const router = useRouter();
@@ -104,30 +107,36 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5 futuristic-scroll">
-          {NAV.map(({ href, label, icon: Icon, color }) => {
-            const active = pathname === href || pathname.startsWith(href + '/');
-            return (
-              <Link key={href} href={href} onClick={() => setSidebarOpen(false)}
-                className={`
-                  group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
-                  transition-all duration-150
-                  ${active ? 'nav-active font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'}
-                `}
-                style={active ? { paddingLeft: '10px' } : {}}
-              >
-                <div className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 transition-all ${active ? 'shadow-md' : 'opacity-60 group-hover:opacity-100'}`}
-                  style={active
-                    ? { background: `linear-gradient(135deg, ${color}, ${color}aa)`, boxShadow: `0 4px 12px ${color}50` }
-                    : { background: `${color}18` }
-                  }>
-                  <Icon className="h-3.5 w-3.5" style={{ color: active ? 'white' : color }} />
-                </div>
-                <span className="flex-1">{label}</span>
-                {active && <ChevronRight className="h-3 w-3 opacity-50" style={{ color }} />}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 overflow-y-auto px-2 py-3 futuristic-scroll">
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.label} className="mb-3">
+              <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">{section.label}</p>
+              <div className="space-y-0.5">
+                {section.items.map(({ href, label, icon: Icon, color }) => {
+                  const active = pathname === href || pathname.startsWith(href + '/');
+                  return (
+                    <Link key={href} href={href} onClick={() => setSidebarOpen(false)}
+                      className={`
+                        group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
+                        transition-all duration-150
+                        ${active ? 'nav-active font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'}
+                      `}
+                    >
+                      <div className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 transition-all ${active ? 'shadow-md' : 'opacity-60 group-hover:opacity-100'}`}
+                        style={active
+                          ? { background: `linear-gradient(135deg, ${color}, ${color}aa)`, boxShadow: `0 4px 12px ${color}50` }
+                          : { background: `${color}18` }
+                        }>
+                        <Icon className="h-3.5 w-3.5" style={{ color: active ? 'white' : color }} />
+                      </div>
+                      <span className="flex-1">{label}</span>
+                      {active && <ChevronRight className="h-3 w-3 opacity-50" style={{ color }} />}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* Footer */}

@@ -4,10 +4,10 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 
 export interface BookingFilters {
-  search: string;
-  status: string;
-  from: string;
-  to: string;
+  search?: string;
+  status?: string;
+  from?: string;
+  to?: string;
 }
 
 const EMPTY_FORM = {
@@ -27,9 +27,9 @@ const EMPTY_FORM = {
   status: 'pending',
 };
 
-export type BookingForm = typeof EMPTY_FORM;
+export type BookingForm = CreateBookingPayload;
 
-export function useBookings(filters: Partial<BookingFilters> = {}) {
+export function useBookings(filters: BookingFilters = {}) {
   const qc = useQueryClient();
 
   const query = useQuery({
@@ -82,9 +82,12 @@ export function useBookings(filters: Partial<BookingFilters> = {}) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['bookings'] });
       qc.invalidateQueries({ queryKey: ['equipment'] });
+      qc.invalidateQueries({ queryKey: ['equipment-units'] });
+      qc.invalidateQueries({ queryKey: ['fleet-view'] });
       toast.success('Status updated');
     },
-    onError: (e: unknown) => toast.error((e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error'),
+    onError: (e: unknown) =>
+      toast.error((e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error'),
   });
 
   return {
@@ -92,22 +95,18 @@ export function useBookings(filters: Partial<BookingFilters> = {}) {
     isLoading: query.isLoading,
     isError: query.isError,
     createMutation,
-    updateMutation,
     updateStatusMutation,
-    EMPTY_FORM,
+    EMPTY_FORM: {} as CreateBookingPayload,
   };
 }
 
-export function useCheckAvailability(equipmentId: string, startDate: string, endDate: string, excludeId?: string) {
+export function useBookingById(id: string | null) {
   return useQuery({
-    queryKey: ['availability', equipmentId, startDate, endDate, excludeId],
+    queryKey: ['booking', id],
     queryFn: async () => {
-      if (!equipmentId || !startDate || !endDate) return { available: true };
-      const params = new URLSearchParams({ equipment_id: equipmentId, start_date: startDate, end_date: endDate });
-      if (excludeId) params.set('exclude_booking_id', excludeId);
-      const { data } = await api.get(`/bookings/availability?${params}`);
-      return data as { available: boolean; conflicts: unknown[] };
+      const { data } = await api.get(`/bookings/${id}`);
+      return data.data as Record<string, unknown>;
     },
-    enabled: !!(equipmentId && startDate && endDate),
+    enabled: !!id,
   });
 }

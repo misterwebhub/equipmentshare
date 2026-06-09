@@ -29,7 +29,12 @@
       "Bash(git commit -m 'fix: load Google Fonts via next/font instead of CSS @import *)",
       "Bash(git remote *)",
       "Bash(git push *)",
-      "Bash(node server/src/database/migrate.js)"
+      "Bash(node server/src/database/migrate.js)",
+      "Bash(node -e ' *)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":5000\")",
+      "Bash(gh pr *)",
+      "PowerShell(gh pr list --repo misterwebhub/equipmentshare 2>&1)"
     ]
   }
 }

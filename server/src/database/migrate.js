@@ -171,6 +171,25 @@ const migrations = [
     FOREIGN KEY (equipment_id) REFERENCES equipment(id)
   )`,
 
+  `CREATE TABLE IF NOT EXISTS booking_items (
+    id VARCHAR(36) PRIMARY KEY,
+    org_id VARCHAR(36) NOT NULL,
+    booking_id VARCHAR(36) NOT NULL,
+    equipment_id VARCHAR(36) NOT NULL,
+    equipment_unit_id VARCHAR(36),
+    description VARCHAR(255),
+    pricing_type ENUM('fixed','daily','weekly','monthly','hourly') DEFAULT 'daily',
+    unit_rate DECIMAL(10,2) DEFAULT 0,
+    quantity DECIMAL(10,2) DEFAULT 1,
+    line_total DECIMAL(10,2) DEFAULT 0,
+    notes TEXT,
+    sort_order INT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (org_id) REFERENCES organisations(id) ON DELETE CASCADE,
+    FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
+    FOREIGN KEY (equipment_id) REFERENCES equipment(id)
+  )`,
+
   `CREATE TABLE IF NOT EXISTS penalties (
     id VARCHAR(36) PRIMARY KEY,
     org_id VARCHAR(36) NOT NULL,
@@ -259,6 +278,31 @@ const migrations = [
     details JSON,
     ip_address VARCHAR(50),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS support_tickets (
+    id VARCHAR(36) PRIMARY KEY,
+    org_id VARCHAR(36) NOT NULL,
+    created_by VARCHAR(36),
+    assigned_to VARCHAR(36),
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    category ENUM('equipment','booking','billing','technical','other') DEFAULT 'other',
+    priority ENUM('low','medium','high','urgent') DEFAULT 'medium',
+    status ENUM('open','in_progress','resolved','closed') DEFAULT 'open',
+    resolved_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (org_id) REFERENCES organisations(id) ON DELETE CASCADE
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS ticket_comments (
+    id VARCHAR(36) PRIMARY KEY,
+    ticket_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36),
+    message TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ticket_id) REFERENCES support_tickets(id) ON DELETE CASCADE
   )`,
 ];
 
