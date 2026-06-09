@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useBookings, useBookingById } from '@/hooks/use-bookings';
 import { useEquipment } from '@/hooks/use-equipment';
 import { useCustomers } from '@/hooks/use-customers';
-import { useEquipmentUnits, useAvailableUnits } from '@/hooks/use-equipment-units';
+import { useAvailableUnits } from '@/hooks/use-equipment-units';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -467,25 +467,42 @@ export default function BookingsPage() {
               </div>
             </div>
 
-            {/* ── Line items ── */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Line Items</h3>
-                <Button variant="outline" size="sm" onClick={() => setLines(p => [...p, newLine()])}>
-                  <Plus className="h-3.5 w-3.5 mr-1"/>Add Line
-                </Button>
+            {/* SKU unit selector — shown only when equipment + dates are selected and units exist */}
+            {form.equipment_id && form.start_date && form.end_date && (
+              <div className="space-y-2">
+                <Label>
+                  SKU Unit
+                  {availableUnits.length > 0 ? (
+                    <span className="ml-2 text-xs text-green-400">({availableUnits.length} available)</span>
+                  ) : (
+                    <span className="ml-2 text-xs text-muted-foreground">(no tracked units — booking equipment-level)</span>
+                  )}
+                </Label>
+                {availableUnits.length > 0 && (
+                  <Select value={form.equipment_unit_id} onValueChange={(v) => setForm(p => ({ ...p, equipment_unit_id: v === 'none' ? '' : v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select a SKU unit (optional)" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— No specific unit —</SelectItem>
+                      {availableUnits.map(u => (
+                        <SelectItem key={u.id} value={u.id}>
+                          <span className="font-mono">{u.sku_code}</span>
+                          {u.notes ? ` · ${u.notes}` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
-
-              {lines.map((line, i) => (
-                <LineItemRow
-                  key={line._key} item={line} index={i}
-                  allEquipment={allEquipment}
-                  startDate={header.start_date} endDate={header.end_date}
-                  onChange={updateLine}
-                  onRemove={removeLine}
-                  canRemove={lines.length > 1}
-                />
-              ))}
+            )}
+            <div className="space-y-2">
+              <Label>Pricing Type</Label>
+              <Select value={form.pricing_type} onValueChange={(v) => setForm(p => ({ ...p, pricing_type: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fixed">Fixed (Daily)</SelectItem>
+                  <SelectItem value="hourly">Hourly</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* ── Totals ── */}
@@ -538,25 +555,25 @@ export default function BookingsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Invoice Detail Dialog ── */}
-      <Dialog open={!!viewingId} onOpenChange={() => setViewingId(null)}>
-        <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto p-0">
-          {invoiceLoading ? (
-            <div className="flex items-center justify-center h-48">
-              <div className="h-8 w-8 rounded-full border-2 border-violet-500 border-t-transparent animate-spin"/>
-            </div>
-          ) : invoiceDetail ? (() => {
-            const inv = invoiceDetail;
-            const items = (inv.items || []) as Record<string, unknown>[];
-            const subtotal   = items.reduce((s, it) => s + Number(it.line_total || 0), 0);
-            const discount   = Number(inv.discount  || 0);
-            const taxRate    = Number(inv.tax_rate   || 0);
-            const taxAmt     = (subtotal - discount) * taxRate / 100;
-            const grandTotal = Math.max(0, subtotal - discount + taxAmt);
-            const statusKey  = inv.status as string;
-            const PRICING_SHORT: Record<string, string> = { fixed:'Fixed', daily:'/ day', weekly:'/ wk', monthly:'/ mo', hourly:'/ hr' };
-
-            return (
+      {/* View Dialog */}
+      <Dialog open={!!viewing} onOpenChange={() => setViewing(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Booking Details</DialogTitle></DialogHeader>
+          {viewing && (
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-muted-foreground">Equipment</p>
+                  <p className="font-medium">{viewing.equipment_name as string}</p>
+                  {viewing.equipment_sku_code && <p className="text-xs font-mono text-violet-400">{viewing.equipment_sku_code as string}</p>}
+                </div>
+                <div><p className="text-muted-foreground">Customer</p><p className="font-medium">{viewing.customer_name as string}</p></div>
+                <div><p className="text-muted-foreground">Start Date</p><p className="font-medium">{format(new Date(viewing.start_date as string), 'MMM d, yyyy')}</p></div>
+                <div><p className="text-muted-foreground">End Date</p><p className="font-medium">{format(new Date(viewing.end_date as string), 'MMM d, yyyy')}</p></div>
+                <div><p className="text-muted-foreground">Status</p><Badge className={`text-xs capitalize border ${STATUS_COLORS[viewing.status as string] || ''}`} variant="outline">{viewing.status as string}</Badge></div>
+                <div><p className="text-muted-foreground">Estimated Cost</p><p className="font-medium">${(viewing.estimated_cost as number)?.toLocaleString() ?? '—'}</p></div>
+              </div>
+              {viewing.notes && <div><p className="text-muted-foreground">Notes</p><p>{viewing.notes as string}</p></div>}
               <div>
                 {/* ── Invoice header band ── */}
                 <div className="relative overflow-hidden rounded-t-lg px-6 pt-6 pb-5"
