@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
@@ -637,9 +638,9 @@ export default function EquipmentPage() {
       ══════════════════════════════════════════════════════════════ */}
       <Dialog open={!!unitsModalId} onOpenChange={v => { if (!v) setUnitsModalId(null); }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
-          <DialogHeader className="sr-only">
+          <VisuallyHidden.Root>
             <DialogTitle>SKU Units — {unitsModalName}</DialogTitle>
-          </DialogHeader>
+          </VisuallyHidden.Root>
 
           <div className="px-6 py-4 border-b border-border shrink-0">
             <div className="flex items-center gap-3">
