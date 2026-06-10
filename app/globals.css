@@ -521,6 +521,13 @@ tbody tr { height: 3.25rem; }
     color: var(--muted-foreground);
   }
 
+  /* ── Landing page — force light palette on whole page ── */
+  .landing-light {
+    color-scheme: light;
+    background: white;
+    color: #111827;
+  }
+
   /* ── Landing page animations ── */
   @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(28px); }
