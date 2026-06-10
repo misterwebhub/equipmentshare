@@ -58,19 +58,16 @@ export default function LoginPage() {
           style={{ background: 'radial-gradient(circle, oklch(0.52 0.24 264), transparent)' }} />
 
         <div className="relative flex flex-col justify-between p-12 w-full">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl flex items-center justify-center shadow-xl"
-              style={{ background: 'linear-gradient(135deg, oklch(0.52 0.24 264), oklch(0.60 0.18 196))' }}>
-              <Package className="h-4.5 w-4.5 text-white" />
+          {/* Logo — matches landing page Navbar exactly */}
+          <Link href="/" className="flex items-center gap-2.5" aria-label="EquipTrack Pro Home">
+            <div className="h-9 w-9 rounded-xl flex items-center justify-center shadow-md"
+              style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%)' }}>
+              <Package className="text-white" style={{ height: '18px', width: '18px' }} />
             </div>
-            <span className="text-white font-bold text-xl tracking-tight">EquipTrack&nbsp;<span style={{
-              display: 'inline',
-              background: 'linear-gradient(135deg, oklch(0.75 0.20 264), oklch(0.80 0.18 196))',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}>Pro</span></span>
+            <div>
+              <span className="font-bold text-white text-[15px] leading-none">EquipTrack</span>
+              <span className="font-bold text-[15px] leading-none" style={{ color: '#a5b4fc' }}> Pro</span>
+            </div>
           </Link>
 
           {/* Main copy */}
@@ -112,19 +109,16 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-6 md:p-10">
         <div className="w-full max-w-md">
 
-          {/* Mobile logo */}
+          {/* Mobile logo — matches landing page Navbar exactly */}
           <div className="lg:hidden flex items-center gap-2.5 mb-8">
-            <div className="h-8 w-8 rounded-xl flex items-center justify-center shadow-lg"
-              style={{ background: 'linear-gradient(135deg, oklch(0.52 0.24 264), oklch(0.60 0.18 196))' }}>
-              <Package className="h-4 w-4 text-white" />
+            <div className="h-9 w-9 rounded-xl flex items-center justify-center shadow-md"
+              style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%)' }}>
+              <Package className="text-white" style={{ height: '18px', width: '18px' }} />
             </div>
-            <span className="font-bold text-lg text-foreground">EquipTrack&nbsp;<span style={{
-              display: 'inline',
-              background: 'linear-gradient(135deg, oklch(0.52 0.24 264), oklch(0.60 0.18 196))',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}>Pro</span></span>
+            <div>
+              <span className="font-bold text-foreground text-[15px] leading-none">EquipTrack</span>
+              <span className="font-bold text-[15px] leading-none" style={{ color: '#4f46e5' }}> Pro</span>
+            </div>
           </div>
 
           <div className="mb-8">
