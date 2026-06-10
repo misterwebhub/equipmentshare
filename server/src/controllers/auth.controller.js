@@ -150,7 +150,7 @@ async function me(req, res) {
     let org = null;
     if (req.user.org_id) {
       const [orgRows] = await pool.execute(
-        'SELECT id,name,slug,category,email,phone,address,status,plan_id,logo_url,currency FROM organisations WHERE id=?',
+        'SELECT id,name,slug,category,email,phone,address,status,plan_id,logo_url,currency,date_format,number_format,timezone FROM organisations WHERE id=?',
         [req.user.org_id]
       );
       org = orgRows[0] || null;

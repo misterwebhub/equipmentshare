@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { OrgFormatProvider } from '@/lib/org-format';
 import { Button } from '@/components/ui/button';
 import {
   LayoutDashboard, Package, CalendarDays, Users, Wrench,
@@ -246,9 +247,11 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        {/* Content */}
+        {/* Content — wrapped in format context so every page can call useOrgFormat() */}
         <main className="flex-1 overflow-y-auto p-6 futuristic-scroll">
-          {children}
+          <OrgFormatProvider>
+            {children}
+          </OrgFormatProvider>
         </main>
       </div>
     </div>

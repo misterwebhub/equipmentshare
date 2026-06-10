@@ -12,10 +12,24 @@ async function getProfile(req, res) {
 
 async function updateProfile(req, res) {
   try {
-    const { name, category, phone, address, tax_number, currency } = req.body;
+    const { name, category, phone, address, tax_number, currency, date_format, number_format, timezone } = req.body;
     await pool.execute(
-      'UPDATE organisations SET name=?,category=?,phone=?,address=?,tax_number=?,currency=? WHERE id=?',
-      [name, category || 'construction', phone || '', address || '', tax_number || '', currency || 'USD', req.orgId]
+      `UPDATE organisations
+          SET name=?, category=?, phone=?, address=?, tax_number=?,
+              currency=?, date_format=?, number_format=?, timezone=?
+        WHERE id=?`,
+      [
+        name,
+        category    || 'construction',
+        phone       || '',
+        address     || '',
+        tax_number  || '',
+        currency    || 'USD',
+        date_format  || 'MM/DD/YYYY',
+        number_format || 'en-US',
+        timezone    || 'America/New_York',
+        req.orgId,
+      ]
     );
     const [rows] = await pool.execute('SELECT * FROM organisations WHERE id=?', [req.orgId]);
     res.json({ success: true, data: rows[0] });

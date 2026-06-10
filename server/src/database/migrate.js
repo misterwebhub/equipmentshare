@@ -348,6 +348,10 @@ async function runMigrations() {
     ['bookings', 'invoice_number',    "ALTER TABLE bookings ADD COLUMN invoice_number VARCHAR(50) NULL"],
     ['bookings', 'discount',          "ALTER TABLE bookings ADD COLUMN discount DECIMAL(10,2) DEFAULT 0"],
     ['bookings', 'tax_rate',          "ALTER TABLE bookings ADD COLUMN tax_rate DECIMAL(5,2) DEFAULT 0"],
+    // Locale & formatting preferences
+    ['organisations', 'date_format',   "ALTER TABLE organisations ADD COLUMN date_format VARCHAR(20) DEFAULT 'MM/DD/YYYY'"],
+    ['organisations', 'number_format', "ALTER TABLE organisations ADD COLUMN number_format VARCHAR(20) DEFAULT 'en-US'"],
+    ['organisations', 'timezone',      "ALTER TABLE organisations ADD COLUMN timezone VARCHAR(60) DEFAULT 'America/New_York'"],
   ];
 
   console.log('\nApplying column patches...');
