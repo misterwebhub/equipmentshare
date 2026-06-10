@@ -10,22 +10,29 @@ export interface BookingFilters {
   to?: string;
 }
 
-const EMPTY_FORM = {
-  customer_id: '',
-  equipment_id: '',
-  equipment_unit_id: '',
-  assigned_user_id: '',
-  start_date: '',
-  end_date: '',
-  pricing_type: 'fixed',
-  fixed_rate: '',
-  hourly_rate: '',
-  hours_used: '',
-  estimated_cost: '',
-  security_deposit: '',
-  notes: '',
-  status: 'pending',
-};
+export interface BookingItem {
+  equipment_id: string;
+  equipment_unit_id?: string;
+  unit_ids?: string[];          // multi-SKU selection
+  description?: string;
+  pricing_type: string; // fixed | daily | weekly | monthly | hourly
+  unit_rate: number;
+  quantity: number;
+}
+
+export interface CreateBookingPayload {
+  customer_id: string;
+  assigned_user_id?: string;
+  start_date: string;
+  end_date: string;
+  security_deposit?: number;
+  discount?: number;
+  tax_rate?: number;
+  estimated_cost?: number;
+  notes?: string;
+  status?: string;
+  items: BookingItem[];
+}
 
 export type BookingForm = CreateBookingPayload;
 
@@ -46,34 +53,15 @@ export function useBookings(filters: BookingFilters = {}) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (form: BookingForm) =>
-      api.post('/bookings', {
-        ...form,
-        fixed_rate: form.fixed_rate ? Number(form.fixed_rate) : 0,
-        hourly_rate: form.hourly_rate ? Number(form.hourly_rate) : null,
-        hours_used: form.hours_used ? Number(form.hours_used) : null,
-        estimated_cost: form.estimated_cost ? Number(form.estimated_cost) : 0,
-        security_deposit: form.security_deposit ? Number(form.security_deposit) : 0,
-        assigned_user_id: form.assigned_user_id || null,
-        equipment_unit_id: (form as BookingForm & { equipment_unit_id?: string }).equipment_unit_id || null,
-      }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['bookings'] }); toast.success('Booking created'); },
-    onError: (e: unknown) => toast.error((e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error creating booking'),
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, form }: { id: string; form: BookingForm }) =>
-      api.put(`/bookings/${id}`, {
-        ...form,
-        fixed_rate: form.fixed_rate ? Number(form.fixed_rate) : 0,
-        hourly_rate: form.hourly_rate ? Number(form.hourly_rate) : null,
-        hours_used: form.hours_used ? Number(form.hours_used) : null,
-        estimated_cost: form.estimated_cost ? Number(form.estimated_cost) : 0,
-        security_deposit: form.security_deposit ? Number(form.security_deposit) : 0,
-        assigned_user_id: form.assigned_user_id || null,
-      }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['bookings'] }); toast.success('Booking updated'); },
-    onError: (e: unknown) => toast.error((e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error updating booking'),
+    mutationFn: (payload: CreateBookingPayload) => api.post('/bookings', payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['bookings'] });
+      qc.invalidateQueries({ queryKey: ['equipment'] });
+      qc.invalidateQueries({ queryKey: ['equipment-units'] });
+      toast.success('Booking created');
+    },
+    onError: (e: unknown) =>
+      toast.error((e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error creating booking'),
   });
 
   const updateStatusMutation = useMutation({

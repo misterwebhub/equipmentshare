@@ -336,9 +336,18 @@ async function runMigrations() {
   // MySQL < 8.0 doesn't support IF NOT EXISTS on ALTER TABLE ADD COLUMN.
   // We catch ER_DUP_FIELDNAME (1060) and treat it as success.
   const columnPatches = [
+    ['booking_items', 'unit_ids', 'ALTER TABLE booking_items ADD COLUMN unit_ids JSON NULL'],
+    ['bookings', 'is_quotation', 'ALTER TABLE bookings ADD COLUMN is_quotation TINYINT(1) DEFAULT 0 AFTER status'],
+    ['bookings', 'quotation_expires_at', 'ALTER TABLE bookings ADD COLUMN quotation_expires_at DATE NULL'],
+    ['condition_reports', 'equipment_unit_id', 'ALTER TABLE condition_reports ADD COLUMN equipment_unit_id VARCHAR(36) NULL'],
+    ['condition_reports', 'repair_cost', 'ALTER TABLE condition_reports ADD COLUMN repair_cost DECIMAL(10,2) DEFAULT 0'],
+    ['condition_reports', 'resolved_at', 'ALTER TABLE condition_reports ADD COLUMN resolved_at DATETIME NULL'],
     ['bookings', 'equipment_unit_id', 'ALTER TABLE bookings ADD COLUMN equipment_unit_id VARCHAR(36) NULL AFTER equipment_id'],
     ['bookings', 'deposit_returned',  'ALTER TABLE bookings ADD COLUMN deposit_returned TINYINT(1) DEFAULT 0'],
     ['bookings', 'return_condition',  "ALTER TABLE bookings ADD COLUMN return_condition ENUM('excellent','good','fair','poor') NULL"],
+    ['bookings', 'invoice_number',    "ALTER TABLE bookings ADD COLUMN invoice_number VARCHAR(50) NULL"],
+    ['bookings', 'discount',          "ALTER TABLE bookings ADD COLUMN discount DECIMAL(10,2) DEFAULT 0"],
+    ['bookings', 'tax_rate',          "ALTER TABLE bookings ADD COLUMN tax_rate DECIMAL(5,2) DEFAULT 0"],
   ];
 
   console.log('\nApplying column patches...');

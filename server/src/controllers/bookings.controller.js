@@ -1,15 +1,18 @@
 const { v4: uuidv4 } = require('uuid');
 const { pool } = require('../config/database');
 
-const BOOKING_SELECT = `SELECT b.*,c.name as customer_name,e.name as equipment_name,u.name as assigned_user_name,
-  eu.sku_code as equipment_sku_code
+const BOOKING_SELECT = `SELECT b.id,b.org_id,b.customer_id,b.equipment_id,b.assigned_user_id,
+  b.start_date,b.end_date,b.pricing_type,b.fixed_rate,b.hourly_rate,b.hours_used,
+  b.estimated_cost,b.actual_cost,b.security_deposit,b.deposit_returned,
+  b.discount,b.tax_rate,b.status,b.notes,b.returned_at,b.return_condition,
+  b.invoice_number,b.is_quotation,b.quotation_expires_at,b.created_at,b.updated_at,
+  c.name as customer_name,c.email as customer_email,c.phone as customer_phone,
+  u.name as assigned_user_name
   FROM bookings b
   JOIN customers c ON b.customer_id=c.id
-  JOIN equipment e ON b.equipment_id=e.id
-  LEFT JOIN users u ON b.assigned_user_id=u.id
-  LEFT JOIN equipment_units eu ON b.equipment_unit_id=eu.id`;
+  LEFT JOIN users u ON b.assigned_user_id=u.id`;
 
-/* Fetch items for a booking */
+/* Fetch items for a booking — includes unit_ids JSON + resolved SKU codes */
 async function fetchItems(bookingId) {
   const [items] = await pool.execute(
     `SELECT bi.*, e.name as equipment_name, e.category_id,
@@ -21,6 +24,22 @@ async function fetchItems(bookingId) {
      ORDER BY bi.sort_order, bi.created_at`,
     [bookingId]
   );
+  // For each item, resolve unit_ids JSON → array of {id, sku_code}
+  for (const item of items) {
+    let uids = [];
+    try { uids = JSON.parse(item.unit_ids || '[]'); } catch { uids = []; }
+    if (uids.length > 0) {
+      const ph = uids.map(() => '?').join(',');
+      const [units] = await pool.execute(
+        `SELECT id, sku_code FROM equipment_units WHERE id IN (${ph})`, uids
+      );
+      item.unit_skus = units; // [{ id, sku_code }]
+    } else if (item.equipment_unit_id) {
+      item.unit_skus = [{ id: item.equipment_unit_id, sku_code: item.unit_sku_code }];
+    } else {
+      item.unit_skus = [];
+    }
+  }
   return items;
 }
 
@@ -34,11 +53,17 @@ async function syncUnitStatuses(bookingId, newStatus) {
   if (!unitStatus) return;
 
   const [items] = await pool.execute(
-    'SELECT equipment_id, equipment_unit_id FROM booking_items WHERE booking_id=?',
+    'SELECT equipment_id, equipment_unit_id, unit_ids FROM booking_items WHERE booking_id=?',
     [bookingId]
   );
   for (const item of items) {
-    if (item.equipment_unit_id) {
+    // Handle multi-SKU (unit_ids JSON array)
+    let uids = [];
+    try { uids = JSON.parse(item.unit_ids || '[]'); } catch { uids = []; }
+    if (uids.length > 0) {
+      const ph = uids.map(() => '?').join(',');
+      await pool.execute(`UPDATE equipment_units SET status=? WHERE id IN (${ph})`, [unitStatus, ...uids]);
+    } else if (item.equipment_unit_id) {
       await pool.execute('UPDATE equipment_units SET status=? WHERE id=?', [unitStatus, item.equipment_unit_id]);
     } else {
       await pool.execute('UPDATE equipment SET status=? WHERE id=?', [unitStatus, item.equipment_id]);
@@ -129,58 +154,96 @@ async function getById(req, res) {
 async function create(req, res) {
   try {
     const {
-      customer_id, equipment_id, equipment_unit_id, assigned_user_id, start_date, end_date,
-      pricing_type, fixed_rate, hourly_rate, hours_used,
-      estimated_cost, security_deposit, notes, status,
+      customer_id, assigned_user_id, start_date, end_date,
+      security_deposit, notes, status,
+      discount, tax_rate, is_quotation, quotation_expires_at,
+      // unit_ids: array of SKU unit IDs (multi-select); overrides equipment_unit_id & auto-sets quantity
+      items, // [{ equipment_id, unit_ids?: string[], equipment_unit_id?, description?, pricing_type, unit_rate, quantity }]
     } = req.body;
 
-    // If a specific SKU unit is chosen, check SKU-level availability
-    if (equipment_unit_id) {
-      const [unitConflicts] = await pool.execute(
-        `SELECT id FROM bookings WHERE equipment_unit_id=? AND org_id=? AND status NOT IN ('cancelled','completed') AND NOT (end_date < ? OR start_date > ?)`,
-        [equipment_unit_id, req.orgId, start_date, end_date]
-      );
-      if (unitConflicts.length)
-        return res.status(409).json({ success: false, message: 'This SKU unit is not available for selected dates' });
-    } else {
-      // Fall back to equipment-level conflict check (no SKU tracking)
-      const [conflicts] = await pool.execute(
-        `SELECT id FROM bookings WHERE equipment_id=? AND equipment_unit_id IS NULL AND org_id=? AND status NOT IN ('cancelled','completed') AND NOT (end_date < ? OR start_date > ?)`,
-        [equipment_id, req.orgId, start_date, end_date]
-      );
-      if (conflicts.length)
-        return res.status(409).json({ success: false, message: 'Equipment is not available for selected dates' });
+    if (!customer_id || !start_date || !end_date)
+      return res.status(400).json({ success: false, message: 'customer_id, start_date, end_date required' });
+    if (!Array.isArray(items) || !items.length)
+      return res.status(400).json({ success: false, message: 'At least one item required' });
+
+    // Normalise: if unit_ids provided, derive quantity from array length
+    const normItems = items.map(it => {
+      const uids = Array.isArray(it.unit_ids) ? it.unit_ids.filter(Boolean) : [];
+      return {
+        ...it,
+        unit_ids: uids,
+        // quantity = number of SKUs selected (if any), else explicit qty, else 1
+        quantity: uids.length > 0 ? uids.length : (parseFloat(it.quantity) || 1),
+        // keep single equipment_unit_id for backward compat (first unit if multi)
+        equipment_unit_id: uids.length > 0 ? uids[0] : (it.equipment_unit_id || null),
+      };
+    });
+
+    // Validate + check SKU availability per item
+    for (const item of normItems) {
+      if (!item.equipment_id) return res.status(400).json({ success: false, message: 'Each item needs equipment_id' });
+      const uidsToCheck = item.unit_ids.length > 0 ? item.unit_ids : (item.equipment_unit_id ? [item.equipment_unit_id] : []);
+      for (const uid of uidsToCheck) {
+        const [conflicts] = await pool.execute(
+          `SELECT bi.id FROM booking_items bi JOIN bookings b ON bi.booking_id=b.id
+           WHERE (bi.equipment_unit_id=? OR JSON_CONTAINS(COALESCE(bi.unit_ids,'[]'), JSON_QUOTE(?)))
+             AND b.org_id=? AND b.status NOT IN ('cancelled','completed')
+             AND NOT (b.end_date < ? OR b.start_date > ?)`,
+          [uid, uid, req.orgId, start_date, end_date]
+        );
+        if (conflicts.length)
+          return res.status(409).json({ success: false, message: `SKU unit is already booked on these dates` });
+      }
     }
 
     // Calculate totals
-    const subtotal = items.reduce((sum, it) => sum + (parseFloat(it.unit_rate) || 0) * (parseFloat(it.quantity) || 1), 0);
+    const subtotal = normItems.reduce((sum, it) => sum + (parseFloat(it.unit_rate) || 0) * it.quantity, 0);
     const discountAmt = parseFloat(discount) || 0;
     const taxAmt = ((subtotal - discountAmt) * (parseFloat(tax_rate) || 0)) / 100;
     const estimatedCost = Math.max(0, subtotal - discountAmt + taxAmt);
 
     const invoiceNumber = await nextInvoiceNumber(req.orgId);
     const id = uuidv4();
-    const primaryEquipmentId = items[0].equipment_id; // keep legacy col non-null
+    const primaryEquipmentId = normItems[0].equipment_id; // keep legacy col non-null
 
     await pool.execute(
-      `INSERT INTO bookings (id,org_id,customer_id,equipment_id,equipment_unit_id,assigned_user_id,start_date,end_date,pricing_type,fixed_rate,hourly_rate,hours_used,estimated_cost,security_deposit,notes,status)
+      `INSERT INTO bookings (id,org_id,customer_id,equipment_id,assigned_user_id,start_date,end_date,
+         estimated_cost,security_deposit,discount,tax_rate,notes,status,invoice_number,is_quotation,quotation_expires_at)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
-        id, req.orgId, customer_id, equipment_id, equipment_unit_id || null, assigned_user_id || null,
-        start_date, end_date, pricing_type || 'fixed', fixed_rate || 0,
-        hourly_rate || null, hours_used || null, estimated_cost || 0,
-        security_deposit || 0, notes || '', status || 'pending',
+        id, req.orgId, customer_id, primaryEquipmentId, assigned_user_id || null,
+        start_date, end_date, estimatedCost,
+        parseFloat(security_deposit) || 0,
+        discountAmt, parseFloat(tax_rate) || 0,
+        notes || '', is_quotation ? 'pending' : (status || 'pending'), invoiceNumber,
+        is_quotation ? 1 : 0, quotation_expires_at || null,
       ]
     );
 
-    // Update unit status if SKU selected and booking is active
-    if (equipment_unit_id && status === 'active')
-      await pool.execute('UPDATE equipment_units SET status="rented-out" WHERE id=?', [equipment_unit_id]);
-    else if (status === 'active')
-      await pool.execute('UPDATE equipment SET status="rented-out" WHERE id=?', [equipment_id]);
+    // Insert booking items
+    for (let i = 0; i < normItems.length; i++) {
+      const it = normItems[i];
+      const lineTotal = (parseFloat(it.unit_rate) || 0) * it.quantity;
+      await pool.execute(
+        `INSERT INTO booking_items (id,org_id,booking_id,equipment_id,equipment_unit_id,unit_ids,description,pricing_type,unit_rate,quantity,line_total,notes,sort_order)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        [
+          uuidv4(), req.orgId, id,
+          it.equipment_id, it.equipment_unit_id || null,
+          it.unit_ids.length > 0 ? JSON.stringify(it.unit_ids) : null,
+          it.description || '', it.pricing_type || 'daily',
+          parseFloat(it.unit_rate) || 0, it.quantity,
+          lineTotal, it.notes || '', i,
+        ]
+      );
+    }
+
+    // Update unit statuses if booking goes straight to active
+    if (status === 'active') await syncUnitStatuses(id, 'active');
 
     const [rows] = await pool.execute(`${BOOKING_SELECT} WHERE b.id=?`, [id]);
-    res.status(201).json({ success: true, data: rows[0] });
+    const itemsResult = await fetchItems(id);
+    res.status(201).json({ success: true, data: { ...rows[0], items: itemsResult } });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -211,20 +274,21 @@ async function convertQuotation(req, res) {
       'UPDATE bookings SET is_quotation=0, status="pending" WHERE id=? AND org_id=?',
       [req.params.id, req.orgId]
     );
-    const [booking] = await pool.execute('SELECT equipment_id, equipment_unit_id FROM bookings WHERE id=?', [req.params.id]);
-    if (booking.length) {
-      const { equipment_id, equipment_unit_id } = booking[0];
-      const unitStatus =
-        status === 'active' ? 'rented-out' :
-        (status === 'completed' || status === 'cancelled') ? 'available' : null;
+    res.json({ success: true, message: 'Converted to booking' });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+}
 
-      if (unitStatus && equipment_unit_id) {
-        await pool.execute('UPDATE equipment_units SET status=? WHERE id=?', [unitStatus, equipment_unit_id]);
-      } else if (unitStatus) {
-        await pool.execute('UPDATE equipment SET status=? WHERE id=?', [unitStatus, equipment_id]);
-      }
-    }
-    res.json({ success: true, message: 'Status updated' });
+/* ── CHECK AVAILABILITY (legacy) ─────────────────────────────────── */
+async function checkAvailability(req, res) {
+  try {
+    const { equipment_id, start_date, end_date, exclude_booking_id } = req.query;
+    let sql = `SELECT b.id FROM booking_items bi JOIN bookings b ON bi.booking_id=b.id
+               WHERE bi.equipment_id=? AND b.org_id=? AND b.status NOT IN ('cancelled','completed')
+               AND NOT (b.end_date < ? OR b.start_date > ?)`;
+    const params = [equipment_id, req.orgId, start_date, end_date];
+    if (exclude_booking_id) { sql += ' AND b.id != ?'; params.push(exclude_booking_id); }
+    const [rows] = await pool.execute(sql, params);
+    res.json({ success: true, available: rows.length === 0, conflicts: rows });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
