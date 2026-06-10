@@ -18,6 +18,7 @@ export function useOrgProfile() {
     mutationFn: (payload: {
       name: string; category?: string; phone?: string;
       address?: string; tax_number?: string; currency?: string;
+      date_format?: string; number_format?: string; timezone?: string;
     }) => api.put('/settings/profile', payload),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['settings-profile'] }); toast.success('Profile updated'); },
     onError: (e: unknown) => toast.error((e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error'),

@@ -4,6 +4,7 @@ import api from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Shield } from 'lucide-react';
+import { useOrgFormat } from '@/lib/org-format';
 
 interface ConditionReport {
   id: string;
@@ -44,6 +45,7 @@ export default function DamageReportsPage() {
   const reports = data || [];
   const totalCost = reports.reduce((s, r) => s + (Number(r.repair_cost) || 0), 0);
   const severeCount = reports.filter(r => r.damage_level === 'severe').length;
+  const { formatCurrency, formatDate } = useOrgFormat();
 
   return (
     <div className="space-y-6">
@@ -58,7 +60,7 @@ export default function DamageReportsPage() {
         {[
           { label: 'Total Damage Reports', value: reports.length, color: 'oklch(0.68 0.26 30)' },
           { label: 'Severe Incidents', value: severeCount, color: 'oklch(0.65 0.30 20)' },
-          { label: 'Total Repair Cost', value: `$${totalCost.toLocaleString()}`, color: 'oklch(0.76 0.22 155)' },
+          { label: 'Total Repair Cost', value: formatCurrency(totalCost), color: 'oklch(0.76 0.22 155)' },
         ].map(({ label, value, color }) => (
           <Card key={label} className="border-border/60">
             <CardContent className="p-4">
@@ -114,7 +116,7 @@ export default function DamageReportsPage() {
                     </td>
                     <td className="p-3 max-w-xs truncate text-muted-foreground">{r.description || '—'}</td>
                     <td className="p-3 font-medium" style={{ color: r.repair_cost > 0 ? 'oklch(0.68 0.26 30)' : undefined }}>
-                      {r.repair_cost > 0 ? `$${Number(r.repair_cost).toLocaleString()}` : '—'}
+                      {r.repair_cost > 0 ? formatCurrency(r.repair_cost) : '—'}
                     </td>
                     <td className="p-3">
                       <Badge variant="outline" className="text-xs capitalize">
@@ -123,7 +125,7 @@ export default function DamageReportsPage() {
                     </td>
                     <td className="p-3 text-muted-foreground">{r.reporter_name || 'System'}</td>
                     <td className="p-3 text-muted-foreground text-xs">
-                      {r.created_at ? new Date(r.created_at).toLocaleDateString('en-US') : '—'}
+                      {formatDate(r.created_at)}
                     </td>
                   </tr>
                 ))}

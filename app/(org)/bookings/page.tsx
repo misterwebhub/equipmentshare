@@ -22,6 +22,7 @@ import api from '@/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { useOrgFormat } from '@/lib/org-format';
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 interface LineItem {
@@ -347,6 +348,7 @@ export default function BookingsPage() {
   const { data: invoiceDetail, isLoading: invoiceLoading } = useBookingById(viewingId);
   const { equipment } = useEquipment();
   const { customers } = useCustomers();
+  const { formatCurrency, formatDate } = useOrgFormat();
 
   const allEquipment = (equipment as Record<string, unknown>[]).filter(e => e.status !== 'retired');
 
@@ -538,10 +540,10 @@ export default function BookingsPage() {
                     </span>
                   </TableCell>
                   <TableCell className="py-3 text-sm text-muted-foreground whitespace-nowrap">
-                    {format(new Date(b.start_date as string), 'MMM d')} – {format(new Date(b.end_date as string), 'MMM d, yy')}
+                    {formatDate(b.start_date as string)} – {formatDate(b.end_date as string)}
                   </TableCell>
                   <TableCell className="py-3 text-right font-bold text-sm">
-                    ${(b.estimated_cost as number)?.toLocaleString(undefined, {minimumFractionDigits: 2}) ?? '—'}
+                    {formatCurrency(b.estimated_cost)}
                   </TableCell>
                   <TableCell className="py-3">
                     {b.is_quotation ? (
@@ -877,12 +879,12 @@ export default function BookingsPage() {
                     <div className="flex items-center gap-3 text-sm">
                       <div>
                         <p className="text-[10px] text-muted-foreground">From</p>
-                        <p className="font-semibold">{format(new Date(inv.start_date as string), 'MMM d, yyyy')}</p>
+                        <p className="font-semibold">{formatDate(inv.start_date as string)}</p>
                       </div>
                       <div className="text-muted-foreground/40 font-light text-xl">→</div>
                       <div>
                         <p className="text-[10px] text-muted-foreground">To</p>
-                        <p className="font-semibold">{format(new Date(inv.end_date as string), 'MMM d, yyyy')}</p>
+                        <p className="font-semibold">{formatDate(inv.end_date as string)}</p>
                       </div>
                     </div>
                     {inv.assigned_user_name && (
@@ -925,13 +927,13 @@ export default function BookingsPage() {
                               )}
                             </div>
                             <div className="col-span-2 text-center">
-                              <span className="text-xs font-mono">${Number(it.unit_rate).toFixed(2)}</span>
+                              <span className="text-xs font-mono">{formatCurrency(it.unit_rate)}</span>
                               <span className="text-[10px] text-muted-foreground ml-0.5">{PRICING_SHORT[it.pricing_type as string] || ''}</span>
                             </div>
                             <div className="col-span-1 text-center text-xs text-muted-foreground font-mono">{Number(it.quantity)}</div>
                             <div className="col-span-2 text-right font-bold font-mono text-sm"
                               style={{ color: 'oklch(0.78 0.22 195)' }}>
-                              ${Number(it.line_total).toFixed(2)}
+                              {formatCurrency(it.line_total)}
                             </div>
                           </div>
                         );
@@ -942,26 +944,26 @@ export default function BookingsPage() {
                   {/* Totals */}
                   <div className="mt-5 ml-auto max-w-xs space-y-2 text-sm">
                     <div className="flex justify-between text-muted-foreground">
-                      <span>Subtotal</span><span className="font-mono">${inv_subtotal.toFixed(2)}</span>
+                      <span>Subtotal</span><span className="font-mono">{formatCurrency(inv_subtotal)}</span>
                     </div>
                     {inv_discount > 0 && (
                       <div className="flex justify-between text-rose-400">
-                        <span>Discount</span><span className="font-mono">−${inv_discount.toFixed(2)}</span>
+                        <span>Discount</span><span className="font-mono">−{formatCurrency(inv_discount)}</span>
                       </div>
                     )}
                     {inv_taxRate > 0 && (
                       <div className="flex justify-between text-muted-foreground">
-                        <span>Tax ({inv_taxRate}%)</span><span className="font-mono">+${inv_taxAmt.toFixed(2)}</span>
+                        <span>Tax ({inv_taxRate}%)</span><span className="font-mono">+{formatCurrency(inv_taxAmt)}</span>
                       </div>
                     )}
                     {inv_deposit > 0 && (
                       <div className="flex justify-between text-muted-foreground">
-                        <span>Security Deposit</span><span className="font-mono">${inv_deposit.toFixed(2)}</span>
+                        <span>Security Deposit</span><span className="font-mono">{formatCurrency(inv_deposit)}</span>
                       </div>
                     )}
                     <div className="flex justify-between font-bold text-base border-t border-border/50 pt-2"
                       style={{ color: 'oklch(0.78 0.22 195)' }}>
-                      <span>Total Due</span><span className="font-mono">${inv_grandTotal.toFixed(2)}</span>
+                      <span>Total Due</span><span className="font-mono">{formatCurrency(inv_grandTotal)}</span>
                     </div>
                   </div>
 

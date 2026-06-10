@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { HeartPulse, Plus, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { useOrgFormat } from '@/lib/org-format';
 
 interface ConditionReport {
   id: string;
@@ -106,6 +107,7 @@ export default function EquipmentHealthPage() {
   const [form, setForm] = useState({ equipment_id: '', damage_level: 'minor', description: '', repair_required: false, repair_cost: '' });
   const { query, stats, createMutation, updateMutation } = useConditionReports(filters);
   const equipList = useEquipmentList();
+  const { formatCurrency, formatDate } = useOrgFormat();
 
   const s = stats.data?.summary;
 
@@ -135,7 +137,7 @@ export default function EquipmentHealthPage() {
             { label: 'Total Reports', value: s.total, icon: HeartPulse, color: 'oklch(0.70 0.28 270)' },
             { label: 'Open', value: s.open_count, icon: Clock, color: 'oklch(0.68 0.26 30)' },
             { label: 'Severe', value: s.severe, icon: AlertTriangle, color: 'oklch(0.65 0.30 20)' },
-            { label: 'Repair Cost', value: `$${Number(s.total_repair_cost).toLocaleString()}`, icon: CheckCircle, color: 'oklch(0.76 0.22 155)' },
+            { label: 'Repair Cost', value: formatCurrency(s.total_repair_cost), icon: CheckCircle, color: 'oklch(0.76 0.22 155)' },
           ].map(({ label, value, icon: Icon, color }) => (
             <Card key={label} className="border-border/60">
               <CardContent className="p-4">
@@ -210,13 +212,13 @@ export default function EquipmentHealthPage() {
                       </Badge>
                     </td>
                     <td className="p-3 max-w-xs truncate text-muted-foreground">{r.description || '—'}</td>
-                    <td className="p-3">{r.repair_cost > 0 ? `$${r.repair_cost}` : '—'}</td>
+                    <td className="p-3">{r.repair_cost > 0 ? formatCurrency(r.repair_cost) : '—'}</td>
                     <td className="p-3">
                       <Badge className="text-xs capitalize" style={{ background: `${STATUS_COLORS[r.status] ?? '#888'}20`, color: STATUS_COLORS[r.status] ?? '#888', border: `1px solid ${STATUS_COLORS[r.status] ?? '#888'}40` }}>
                         {(r.status ?? '').replace('_', ' ') || '—'}
                       </Badge>
                     </td>
-                    <td className="p-3 text-muted-foreground text-xs">{new Date(r.created_at).toLocaleDateString()}</td>
+                    <td className="p-3 text-muted-foreground text-xs">{formatDate(r.created_at)}</td>
                     <td className="p-3">
                       {r.status && r.status !== 'resolved' && (
                         <Button size="sm" variant="outline" className="text-xs h-7"

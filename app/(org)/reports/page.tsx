@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { DollarSign, Package, TrendingUp, AlertTriangle } from 'lucide-react';
+import { useOrgFormat } from '@/lib/org-format';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
 export default function ReportsPage() {
   const { data: stats } = useDashboardStats();
+  const { formatCurrency } = useOrgFormat();
   const { data: revenue } = useRevenueReport(6);
   const { data: utilisation } = useUtilizationReport();
 
@@ -28,7 +30,7 @@ export default function ReportsPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card><CardContent className="pt-4"><div className="flex items-center gap-2"><DollarSign className="h-4 w-4 text-primary" /><p className="text-xs text-muted-foreground">Month Revenue</p></div><p className="text-2xl font-bold mt-1">${((stats?.revenue?.month_revenue as number) ?? 0).toLocaleString()}</p></CardContent></Card>
+        <Card><CardContent className="pt-4"><div className="flex items-center gap-2"><DollarSign className="h-4 w-4 text-primary" /><p className="text-xs text-muted-foreground">Month Revenue</p></div><p className="text-2xl font-bold mt-1">{formatCurrency(stats?.revenue?.month_revenue ?? 0)}</p></CardContent></Card>
         <Card><CardContent className="pt-4"><div className="flex items-center gap-2"><Package className="h-4 w-4 text-primary" /><p className="text-xs text-muted-foreground">Active Bookings</p></div><p className="text-2xl font-bold mt-1">{(stats?.bookings?.active as number) ?? 0}</p></CardContent></Card>
         <Card><CardContent className="pt-4"><div className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" /><p className="text-xs text-muted-foreground">Available Equipment</p></div><p className="text-2xl font-bold mt-1">{(stats?.equipment?.available as number) ?? 0}</p></CardContent></Card>
         <Card><CardContent className="pt-4"><div className="flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-primary" /><p className="text-xs text-muted-foreground">Overdue Bookings</p></div><p className="text-2xl font-bold mt-1">{(stats?.bookings?.overdue as number) ?? 0}</p></CardContent></Card>
@@ -50,8 +52,8 @@ export default function ReportsPage() {
                   <BarChart data={monthlyData as Record<string, unknown>[]}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                     <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} tickFormatter={v => `$${v}`} />
-                    <Tooltip formatter={(v: number) => [`$${v.toLocaleString()}`, 'Revenue']} />
+                    <YAxis tick={{ fontSize: 12 }} tickFormatter={v => formatCurrency(v)} />
+                    <Tooltip formatter={(v: number) => [formatCurrency(v), 'Revenue']} />
                     <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -71,7 +73,7 @@ export default function ReportsPage() {
                       <div key={i} className="flex items-center justify-between text-sm">
                         <span className="truncate flex-1">{e.name as string}</span>
                         <div className="text-right ml-2">
-                          <p className="font-medium">${((e.revenue as number) || 0).toLocaleString()}</p>
+                          <p className="font-medium">{formatCurrency(e.revenue)}</p>
                           <p className="text-xs text-muted-foreground">{e.bookings as number} bookings</p>
                         </div>
                       </div>
@@ -109,7 +111,7 @@ export default function ReportsPage() {
                       <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">{i + 1}</div>
                       <span className="flex-1 font-medium">{c.name as string}</span>
                       <div className="text-right">
-                        <p className="font-medium">${((c.revenue as number) || 0).toLocaleString()}</p>
+                        <p className="font-medium">{formatCurrency(c.revenue)}</p>
                         <p className="text-xs text-muted-foreground">{c.bookings as number} bookings</p>
                       </div>
                     </div>

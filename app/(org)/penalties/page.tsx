@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, AlertTriangle } from 'lucide-react';
-import { format } from 'date-fns';
+import { useOrgFormat } from '@/lib/org-format';
 
 const STATUS_COLORS: Record<string, string> = {
   pending:  'bg-yellow-500/10 text-yellow-700 border-yellow-200',
@@ -22,6 +22,7 @@ export default function PenaltiesPage() {
   const [statusFilter, setStatusFilter] = useState('');
 
   const { penalties, isLoading, waiveMutation, markPaidMutation } = usePenalties(statusFilter !== 'all' ? statusFilter : '');
+  const { formatCurrency, formatDate } = useOrgFormat();
 
   const filtered = (penalties as Record<string, unknown>[]).filter(p => {
     if (!search) return true;
@@ -41,8 +42,8 @@ export default function PenaltiesPage() {
 
       <div className="grid grid-cols-3 gap-4">
         <Card><CardContent className="pt-4"><p className="text-xs text-muted-foreground">Total Penalties</p><p className="text-2xl font-bold">{(penalties as unknown[]).length}</p></CardContent></Card>
-        <Card><CardContent className="pt-4"><p className="text-xs text-muted-foreground">Pending Amount</p><p className="text-2xl font-bold text-yellow-600">${totalPending.toLocaleString()}</p></CardContent></Card>
-        <Card><CardContent className="pt-4"><p className="text-xs text-muted-foreground">Collected</p><p className="text-2xl font-bold text-green-600">${totalPaid.toLocaleString()}</p></CardContent></Card>
+        <Card><CardContent className="pt-4"><p className="text-xs text-muted-foreground">Pending Amount</p><p className="text-2xl font-bold text-yellow-600">{formatCurrency(totalPending)}</p></CardContent></Card>
+        <Card><CardContent className="pt-4"><p className="text-xs text-muted-foreground">Collected</p><p className="text-2xl font-bold text-green-600">{formatCurrency(totalPaid)}</p></CardContent></Card>
       </div>
 
       <div className="flex gap-3">
@@ -85,8 +86,8 @@ export default function PenaltiesPage() {
                   <TableCell className="font-medium">{(p.equipment_name as string) || '—'}</TableCell>
                   <TableCell>{(p.customer_name as string) || '—'}</TableCell>
                   <TableCell className="capitalize">{(p.type as string)?.replace('_', ' ')}</TableCell>
-                  <TableCell className="font-medium">${Number(p.amount ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm">{format(new Date(p.created_at as string), 'MMM d, yyyy')}</TableCell>
+                  <TableCell className="font-medium">{formatCurrency(p.amount)}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">{formatDate(p.created_at as string)}</TableCell>
                   <TableCell>
                     <Badge className={`text-xs capitalize border ${STATUS_COLORS[p.status as string] || ''}`} variant="outline">{p.status as string}</Badge>
                   </TableCell>
