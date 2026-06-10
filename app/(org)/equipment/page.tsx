@@ -18,6 +18,7 @@ import {
   DollarSign, Grid3X3, List, Tag, Wrench, AlertTriangle,
   Clock, BarChart2,
 } from 'lucide-react';
+import { useOrgFormat } from '@/lib/org-format';
 
 /* ─── Status helpers ───────────────────────────────────────────────── */
 const STATUS_META: Record<string, { label: string; bg: string; text: string; border: string; dot: string }> = {
@@ -68,6 +69,7 @@ export default function EquipmentPage() {
   const { equipment, isLoading, createMutation, updateMutation, deleteMutation, EMPTY_FORM } = useEquipment();
   const { data: categories = [] } = useCategories();
   const { units, createUnitsMutation, updateUnitMutation, deleteUnitMutation } = useEquipmentUnits(unitsModalId);
+  const { formatCurrency } = useOrgFormat();
 
   const openAdd = () => {
     setEditingId(null); setForm(EMPTY_FORM); setQty('1');
@@ -268,11 +270,11 @@ export default function EquipmentPage() {
                     <TableCell>
                       {(e.pricing_type === 'fixed' && e.fixed_rate) ? (
                         <span className="text-sm font-medium font-mono">
-                          ${Number(e.fixed_rate).toFixed(0)}<span className="text-xs text-muted-foreground font-sans">/day</span>
+                          {formatCurrency(Number(e.fixed_rate))}<span className="text-xs text-muted-foreground font-sans">/day</span>
                         </span>
                       ) : (e.pricing_type === 'hourly' && e.hourly_rate) ? (
                         <span className="text-sm font-medium font-mono">
-                          ${Number(e.hourly_rate).toFixed(0)}<span className="text-xs text-muted-foreground font-sans">/hr</span>
+                          {formatCurrency(Number(e.hourly_rate))}<span className="text-xs text-muted-foreground font-sans">/hr</span>
                         </span>
                       ) : <span className="text-muted-foreground text-sm">—</span>}
                     </TableCell>
@@ -376,8 +378,8 @@ export default function EquipmentPage() {
                 {/* Pricing + actions */}
                 <div className="flex items-center justify-between mt-auto pt-1 border-t border-border/60">
                   <span className="text-sm font-medium font-mono text-foreground">
-                    {e.pricing_type === 'fixed' && e.fixed_rate ? `$${Number(e.fixed_rate).toFixed(0)}/day` : ''}
-                    {e.pricing_type === 'hourly' && e.hourly_rate ? `$${Number(e.hourly_rate).toFixed(0)}/hr` : ''}
+                    {e.pricing_type === 'fixed' && e.fixed_rate ? <>{formatCurrency(Number(e.fixed_rate))}/day</> : ''}
+                    {e.pricing_type === 'hourly' && e.hourly_rate ? <>{formatCurrency(Number(e.hourly_rate))}/hr</> : ''}
                     {!e.fixed_rate && !e.hourly_rate ? <span className="text-muted-foreground">No price set</span> : ''}
                   </span>
                   <div className="flex items-center gap-0.5">

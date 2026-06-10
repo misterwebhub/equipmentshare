@@ -26,6 +26,7 @@ const COLORS = ['oklch(0.76 0.22 155)', 'oklch(0.68 0.26 250)', 'oklch(0.68 0.26
 
 export default function AnalyticsPage() {
   const { data, isLoading } = useAnalytics();
+  const { formatCurrency } = useOrgFormat();
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-64">
@@ -36,7 +37,6 @@ export default function AnalyticsPage() {
   const dash = data?.dashboard || {};
   const equipment = dash.equipment || {};
   const bookings = dash.bookings || {};
-  const { formatCurrency } = useOrgFormat();
 
   const utilizationData = [
     { name: 'Available', value: Number(equipment.available) || 0 },
@@ -128,7 +128,7 @@ export default function AnalyticsPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.5 0 0 / 0.1)" />
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                   <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip formatter={(v: number) => [`$${v}`, 'Revenue']} />
+                  <Tooltip formatter={(v: number) => [formatCurrency(v), 'Revenue']} />
                   <Line type="monotone" dataKey="revenue" stroke="oklch(0.76 0.22 155)" strokeWidth={2} dot={{ r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>

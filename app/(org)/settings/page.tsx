@@ -85,7 +85,7 @@ function FormatPreview({ currency, numberFormat }: { currency: string; numberFor
 
 export default function SettingsPage() {
   const { refreshUser } = useAuth();
-  const { formatDate } = useOrgFormat();
+  const { formatDate, formatCurrency } = useOrgFormat();
   const { profile: profileData, isLoading: profileLoading, updateMutation } = useOrgProfile();
   const { data: billingData } = useBilling();
   const changePasswordMutation = useChangePassword();
@@ -350,7 +350,7 @@ export default function SettingsPage() {
                     </Badge>
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div><p className="text-muted-foreground">Monthly Rate</p><p className="font-medium">${sub.price_monthly as number}/mo</p></div>
+                    <div><p className="text-muted-foreground">Monthly Rate</p><p className="font-medium">{formatCurrency(sub.price_monthly as number)}/mo</p></div>
                     <div><p className="text-muted-foreground">Billing Cycle</p><p className="font-medium capitalize">{sub.billing_cycle as string}</p></div>
                     <div><p className="text-muted-foreground">Starts</p><p className="font-medium">{sub.starts_at ? formatDate(sub.starts_at as string) : '—'}</p></div>
                     <div><p className="text-muted-foreground">Ends</p><p className="font-medium">{sub.ends_at ? formatDate(sub.ends_at as string) : 'Ongoing'}</p></div>
