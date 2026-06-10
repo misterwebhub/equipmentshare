@@ -31,6 +31,7 @@ app.use('/api/notifications',     require('./routes/notifications.routes'));
 app.use('/api/condition-reports', require('./routes/condition-reports.routes'));
 app.use('/api/support-tickets',   require('./routes/support-tickets.routes'));
 app.use('/api/activity',          require('./routes/activity.routes'));
+app.use('/api/demo-seed',         require('./routes/demo-seed.routes'));
 
 app.use(errorHandler);
 
