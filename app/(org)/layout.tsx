@@ -204,18 +204,23 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <header className="h-14 border-b border-border/60 flex items-center px-4 gap-4 shrink-0">
+        <header className="h-14 border-b border-border/60 flex items-center px-5 gap-4 shrink-0">
           <button className="lg:hidden p-1.5 rounded-lg text-muted-foreground hover:bg-muted" onClick={() => setSidebarOpen(true)}>
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex-1" />
-          <div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
-            <span className="gradient-text font-semibold">SYS</span>
-            <ChevronRight className="h-3 w-3" />
-            <span className="capitalize">{pathname.split('/')[1] || 'dashboard'}</span>
+          {/* Breadcrumb */}
+          <div className="hidden md:flex items-center gap-1.5 text-sm text-muted-foreground font-medium">
+            <span className="gradient-text font-bold">EquipTrack</span>
+            <ChevronRight className="h-3.5 w-3.5 opacity-40" />
+            <span className="capitalize text-foreground/80">{pathname.split('/')[1]?.replace(/-/g,' ') || 'dashboard'}</span>
           </div>
+          {/* Quick-link to notifications */}
+          <Link href="/notifications" className="relative p-2 rounded-xl hover:bg-muted/60 transition-colors text-muted-foreground hover:text-foreground">
+            <Bell className="h-5 w-5" />
+          </Link>
         </header>
-        <main className="flex-1 overflow-y-auto p-6 futuristic-scroll">
+        <main className="flex-1 overflow-y-auto px-6 py-5 futuristic-scroll">
           {children}
         </main>
       </div>

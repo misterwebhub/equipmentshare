@@ -179,6 +179,7 @@
   * { @apply border-border outline-ring/50; }
 
   html {
+    font-size: 15px;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
@@ -186,7 +187,28 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
+    font-size: 0.9375rem; /* 15px base */
+    line-height: 1.6;
   }
+
+  /* ── CRM-standard heading sizes ── */
+  h1 { font-size: 1.6rem;  font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; }
+  h2 { font-size: 1.3rem;  font-weight: 600; letter-spacing: -0.01em; line-height: 1.3;  }
+  h3 { font-size: 1.1rem;  font-weight: 600; line-height: 1.35; }
+  h4 { font-size: 0.95rem; font-weight: 600; line-height: 1.4;  }
+
+  /* ── Bigger inputs & selects for CRM usability ── */
+  input[type="text"], input[type="email"], input[type="number"],
+  input[type="date"], input[type="password"], input[type="search"],
+  textarea, select {
+    font-size: 0.875rem;
+    min-height: 2.5rem;
+  }
+
+  /* ── Table improvements ── */
+  th { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; }
+  td { font-size: 0.875rem; }
+  tr { min-height: 3rem; }
 
   /* Dark: animated mesh gradient background */
   .dark body {
@@ -374,7 +396,24 @@
    COMPONENT OVERRIDES
 ═══════════════════════════════════════════════════════════════ */
 
-/* Sidebar */
+/* ── CRM Button sizing ── */
+button { font-size: 0.875rem; }
+
+/* ── Badge & label readability ── */
+.text-xs  { font-size: 0.75rem  !important; }
+.text-sm  { font-size: 0.875rem !important; }
+.text-base { font-size: 1rem   !important; }
+
+/* ── Card improvements ── */
+.card-crm {
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 1.25rem;
+  box-shadow: 0 1px 4px oklch(0 0 0 / 0.06);
+}
+
+/* ── Sidebar ── */
 .dark aside {
   background: oklch(0.09 0.020 260 / 0.97);
   border-right: 1px solid oklch(0.70 0.28 270 / 0.12);

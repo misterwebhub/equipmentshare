@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useBookings, useBookingById } from '@/hooks/use-bookings';
 import { useEquipment } from '@/hooks/use-equipment';
 import { useCustomers } from '@/hooks/use-customers';
@@ -90,6 +90,34 @@ function LineItemRow({
       : [...item.unit_ids, uid];
     onChange(item._key, 'unit_ids', next);
   };
+
+  /* ── Auto-calculate quantity from date range based on pricing type ── */
+  useEffect(() => {
+    if (!startDate || !endDate || !item.equipment_id) return;
+    if (item.unit_ids.length > 0) return; // SKU count overrides
+    const days = Math.max(1, Math.ceil(
+      (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86_400_000
+    ));
+    let autoQty: number | null = null;
+    if (item.pricing_type === 'daily')   autoQty = days;
+    else if (item.pricing_type === 'weekly')  autoQty = Math.max(1, Math.ceil(days / 7));
+    else if (item.pricing_type === 'monthly') autoQty = Math.max(1, Math.ceil(days / 30));
+    // fixed → manual qty;  hourly → manual hours
+    if (autoQty !== null) onChange(item._key, 'quantity', String(autoQty));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startDate, endDate, item.pricing_type, item.equipment_id]);
+
+  /* Cost breakdown label */
+  const dateQtyLabel = (() => {
+    if (!startDate || !endDate || !item.equipment_id) return null;
+    const days = Math.max(1, Math.ceil(
+      (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86_400_000
+    ));
+    if (item.pricing_type === 'daily')   return `${days} day${days !== 1 ? 's' : ''}`;
+    if (item.pricing_type === 'weekly')  { const w = Math.max(1, Math.ceil(days / 7)); return `${w} week${w !== 1 ? 's' : ''} (${days}d)`; }
+    if (item.pricing_type === 'monthly') { const m = Math.max(1, Math.ceil(days / 30)); return `${m} month${m !== 1 ? 's' : ''} (${days}d)`; }
+    return null;
+  })();
 
   return (
     <div className="group relative rounded-2xl border border-border/60 bg-card shadow-sm hover:shadow-md hover:border-border transition-all duration-200 overflow-hidden">
@@ -256,16 +284,26 @@ function LineItemRow({
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              {item.pricing_type === 'fixed' ? 'Qty' : item.pricing_type === 'hourly' ? 'Hours' : 'Days / Units'}
+              {item.pricing_type === 'fixed' ? 'Qty' : item.pricing_type === 'hourly' ? 'Hours' : 'Qty (auto)'}
               {item.unit_ids.length > 0 && (
-                <span title="Auto from selected SKUs" className="text-[10px] text-violet-400">(auto)</span>
+                <span title="Auto from selected SKUs" className="text-[10px] text-violet-400">(SKUs)</span>
               )}
             </Label>
             <Input className="h-10 bg-background border-border/80 font-mono" type="number" min="1" step="1" placeholder="1"
               value={item.unit_ids.length > 0 ? String(item.unit_ids.length) : item.quantity}
-              readOnly={item.unit_ids.length > 0}
-              onChange={e => item.unit_ids.length === 0 && onChange(item._key, 'quantity', e.target.value)}
-              style={item.unit_ids.length > 0 ? { opacity: 0.7, cursor: 'not-allowed' } : {}} />
+              readOnly={item.unit_ids.length > 0 || (['daily','weekly','monthly'].includes(item.pricing_type) && !!startDate && !!endDate)}
+              onChange={e => {
+                if (item.unit_ids.length === 0 && !(['daily','weekly','monthly'].includes(item.pricing_type) && startDate && endDate))
+                  onChange(item._key, 'quantity', e.target.value);
+              }}
+              style={(item.unit_ids.length > 0 || (['daily','weekly','monthly'].includes(item.pricing_type) && !!startDate && !!endDate))
+                ? { opacity: 0.75, cursor: 'not-allowed', background: 'oklch(0.70 0.28 270 / 0.06)' } : {}} />
+            {/* Date-range cost breakdown hint */}
+            {dateQtyLabel && (parseFloat(item.unit_rate) || 0) > 0 && (
+              <p className="text-[10px] font-medium" style={{ color: 'oklch(0.72 0.22 195)' }}>
+                {dateQtyLabel} × ${parseFloat(item.unit_rate).toFixed(2)} = <strong>${lineTotal.toFixed(2)}</strong>
+              </p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-muted-foreground">Line Total</Label>
