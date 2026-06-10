@@ -14,6 +14,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import { Trash2, FlaskConical, AlertTriangle, CheckCircle2, Loader2, Globe } from 'lucide-react';
+import { useOrgFormat } from '@/lib/org-format';
 
 /* ── locale option lists ─────────────────────────────────────────── */
 const CURRENCIES = [
@@ -84,6 +85,7 @@ function FormatPreview({ currency, numberFormat }: { currency: string; numberFor
 
 export default function SettingsPage() {
   const { refreshUser } = useAuth();
+  const { formatDate } = useOrgFormat();
   const { profile: profileData, isLoading: profileLoading, updateMutation } = useOrgProfile();
   const { data: billingData } = useBilling();
   const changePasswordMutation = useChangePassword();
@@ -350,8 +352,8 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div><p className="text-muted-foreground">Monthly Rate</p><p className="font-medium">${sub.price_monthly as number}/mo</p></div>
                     <div><p className="text-muted-foreground">Billing Cycle</p><p className="font-medium capitalize">{sub.billing_cycle as string}</p></div>
-                    <div><p className="text-muted-foreground">Starts</p><p className="font-medium">{sub.starts_at ? new Date(sub.starts_at as string).toLocaleDateString() : '—'}</p></div>
-                    <div><p className="text-muted-foreground">Ends</p><p className="font-medium">{sub.ends_at ? new Date(sub.ends_at as string).toLocaleDateString() : 'Ongoing'}</p></div>
+                    <div><p className="text-muted-foreground">Starts</p><p className="font-medium">{sub.starts_at ? formatDate(sub.starts_at as string) : '—'}</p></div>
+                    <div><p className="text-muted-foreground">Ends</p><p className="font-medium">{sub.ends_at ? formatDate(sub.ends_at as string) : 'Ongoing'}</p></div>
                   </div>
                 </>
               ) : (

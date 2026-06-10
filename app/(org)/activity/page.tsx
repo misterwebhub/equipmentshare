@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Activity, User, Box, Calendar } from 'lucide-react';
+import { useOrgFormat } from '@/lib/org-format';
 
 interface ActivityLog {
   id: string;
@@ -36,6 +37,7 @@ const ACTION_ICONS: Record<string, React.ElementType> = {
 
 export default function ActivityPage() {
   const [resource, setResource] = useState('');
+  const { formatDate } = useOrgFormat();
 
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ['activity', resource],
@@ -165,7 +167,7 @@ export default function ActivityPage() {
                         )}
                       </td>
                       <td className="p-3 text-xs text-muted-foreground font-mono">{log.ip_address || '—'}</td>
-                      <td className="p-3 text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString()}</td>
+                      <td className="p-3 text-xs text-muted-foreground">{formatDate(log.created_at, true)}</td>
                     </tr>
                   );
                 })}

@@ -66,6 +66,7 @@ function LineItemRow({
   onRemove: (key: string) => void;
   canRemove: boolean;
 }) {
+  const { formatCurrency } = useOrgFormat();
   const { units: allUnits } = useEquipmentUnits(item.equipment_id || null);
   const { data: availUnits = [] } = useAvailableUnits(item.equipment_id || null, startDate, endDate);
   const availIds = new Set(availUnits.map((u: Record<string, unknown>) => u.id as string));
@@ -302,7 +303,7 @@ function LineItemRow({
             {/* Date-range cost breakdown hint */}
             {dateQtyLabel && (parseFloat(item.unit_rate) || 0) > 0 && (
               <p className="text-[10px] font-medium" style={{ color: 'oklch(0.72 0.22 195)' }}>
-                {dateQtyLabel} × ${parseFloat(item.unit_rate).toFixed(2)} = <strong>${lineTotal.toFixed(2)}</strong>
+                {dateQtyLabel} × {formatCurrency(parseFloat(item.unit_rate))} = <strong>{formatCurrency(lineTotal)}</strong>
               </p>
             )}
           </div>
@@ -310,7 +311,7 @@ function LineItemRow({
             <Label className="text-xs font-medium text-muted-foreground">Line Total</Label>
             <div className="h-10 flex items-center px-3 rounded-lg border border-border/60 bg-muted/30 font-bold font-mono text-sm"
               style={{ color: lineTotal > 0 ? 'oklch(0.78 0.22 195)' : undefined }}>
-              ${lineTotal.toFixed(2)}
+              {formatCurrency(lineTotal)}
             </div>
           </div>
         </div>
@@ -726,30 +727,30 @@ export default function BookingsPage() {
                 <div className="rounded-xl bg-muted/30 border border-border/60 p-4 space-y-2 text-sm">
                   <div className="flex justify-between text-muted-foreground">
                     <span>Subtotal</span>
-                    <span className="font-mono font-medium">${subtotal.toFixed(2)}</span>
+                    <span className="font-mono font-medium">{formatCurrency(subtotal)}</span>
                   </div>
                   {discount > 0 && (
                     <div className="flex justify-between text-rose-400">
                       <span>Discount</span>
-                      <span className="font-mono">−${discount.toFixed(2)}</span>
+                      <span className="font-mono">−{formatCurrency(discount)}</span>
                     </div>
                   )}
                   {taxRate > 0 && (
                     <div className="flex justify-between text-muted-foreground">
                       <span>Tax ({taxRate}%)</span>
-                      <span className="font-mono">+${taxAmt.toFixed(2)}</span>
+                      <span className="font-mono">+{formatCurrency(taxAmt)}</span>
                     </div>
                   )}
                   {deposit > 0 && (
                     <div className="flex justify-between text-muted-foreground">
                       <span>Security Deposit</span>
-                      <span className="font-mono">${deposit.toFixed(2)}</span>
+                      <span className="font-mono">{formatCurrency(deposit)}</span>
                     </div>
                   )}
                   <div className="flex justify-between font-bold text-base border-t border-border/60 pt-2 mt-1"
                     style={{ color: 'oklch(0.78 0.22 195)' }}>
                     <span>Grand Total</span>
-                    <span className="font-mono">${grandTotal.toFixed(2)}</span>
+                    <span className="font-mono">{formatCurrency(grandTotal)}</span>
                   </div>
                 </div>
               </div>
@@ -773,8 +774,8 @@ export default function BookingsPage() {
                 {createMutation.isPending
                   ? 'Saving…'
                   : header.is_quotation
-                    ? `💾 Save Quotation · $${grandTotal.toFixed(2)}`
-                    : `✓ Create Invoice · $${grandTotal.toFixed(2)}`
+                    ? `💾 Save Quotation · ${formatCurrency(grandTotal)}`
+                    : `✓ Create Invoice · ${formatCurrency(grandTotal)}`
                 }
               </Button>
             </div>
@@ -830,7 +831,7 @@ export default function BookingsPage() {
                         {(inv.invoice_number as string) || '—'}
                       </p>
                       <p className="text-xs text-white/40 mt-1">
-                        Issued {format(new Date(inv.created_at as string), 'MMMM d, yyyy')}
+                        Issued {formatDate(inv.created_at as string)}
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-2 mt-1">
@@ -847,7 +848,7 @@ export default function BookingsPage() {
                         </Badge>
                       )}
                       <p className="text-2xl font-bold font-mono text-white mt-2">
-                        ${inv_grandTotal.toFixed(2)}
+                        {formatCurrency(inv_grandTotal)}
                       </p>
                       <p className="text-xs text-white/40">Grand Total</p>
                     </div>
@@ -990,7 +991,7 @@ export default function BookingsPage() {
                       </Button>
                       {inv.quotation_expires_at && (
                         <span className="text-xs text-muted-foreground ml-auto">
-                          Expires: {format(new Date(inv.quotation_expires_at as string), 'MMM d, yyyy')}
+                          Expires: {formatDate(inv.quotation_expires_at as string)}
                         </span>
                       )}
                     </div>

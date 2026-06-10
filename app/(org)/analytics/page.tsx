@@ -4,6 +4,7 @@ import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, DollarSign, Package, Calendar } from 'lucide-react';
+import { useOrgFormat } from '@/lib/org-format';
 
 function useAnalytics() {
   return useQuery({
@@ -35,6 +36,7 @@ export default function AnalyticsPage() {
   const dash = data?.dashboard || {};
   const equipment = dash.equipment || {};
   const bookings = dash.bookings || {};
+  const { formatCurrency } = useOrgFormat();
 
   const utilizationData = [
     { name: 'Available', value: Number(equipment.available) || 0 },
@@ -63,7 +65,7 @@ export default function AnalyticsPage() {
         {[
           { label: 'Total Units', value: equipment.total_units || 0, icon: Package, color: 'oklch(0.78 0.22 195)' },
           { label: 'Active Bookings', value: bookings.active || 0, icon: Calendar, color: 'oklch(0.68 0.26 250)' },
-          { label: 'Month Revenue', value: `$${Number(dash.revenue?.month_revenue || 0).toLocaleString()}`, icon: DollarSign, color: 'oklch(0.76 0.22 155)' },
+          { label: 'Month Revenue', value: formatCurrency(dash.revenue?.month_revenue || 0), icon: DollarSign, color: 'oklch(0.76 0.22 155)' },
           { label: 'Utilization', value: equipment.total_units ? `${Math.round(((equipment.rented||0) / equipment.total_units) * 100)}%` : '0%', icon: TrendingUp, color: 'oklch(0.70 0.28 270)' },
         ].map(({ label, value, icon: Icon, color }) => (
           <Card key={label} className="border-border/60">

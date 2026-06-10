@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Pencil, Trash2, Search, Wrench, CheckCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { useOrgFormat } from '@/lib/org-format';
 
 const STATUS_COLORS: Record<string, string> = {
   scheduled: 'bg-blue-500/10 text-blue-700 border-blue-200',
@@ -31,6 +31,7 @@ export default function MaintenancePage() {
 
   const { schedules, isLoading, createMutation, updateMutation, deleteMutation, completeMutation, EMPTY_FORM } = useMaintenance(statusFilter);
   const { equipment } = useEquipment();
+  const { formatCurrency, formatDate } = useOrgFormat();
 
   const openAdd = () => { setEditingId(null); setForm(EMPTY_FORM); setOpen(true); };
   const openEdit = (m: Record<string, unknown>) => {
@@ -123,9 +124,9 @@ export default function MaintenancePage() {
                 <TableRow key={m.id as string}>
                   <TableCell className="font-medium">{m.equipment_name as string}</TableCell>
                   <TableCell className="capitalize">{(m.type as string)?.replace('_', ' ')}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{format(new Date(m.scheduled_date as string), 'MMM d, yyyy')}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{formatDate(m.scheduled_date as string)}</TableCell>
                   <TableCell className="capitalize text-sm">{m.frequency as string}</TableCell>
-                  <TableCell>{m.cost ? `$${(m.cost as number).toLocaleString()}` : '—'}</TableCell>
+                  <TableCell>{m.cost ? formatCurrency(m.cost) : '—'}</TableCell>
                   <TableCell>
                     <Badge className={`text-xs capitalize border ${STATUS_COLORS[m.status as string] || ''}`} variant="outline">{(m.status as string)?.replace('_', ' ')}</Badge>
                   </TableCell>

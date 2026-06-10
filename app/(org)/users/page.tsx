@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Search, Users, UserX } from 'lucide-react';
-import { format } from 'date-fns';
+import { useOrgFormat } from '@/lib/org-format';
 
 const ROLE_COLORS: Record<string, string> = {
   admin: 'bg-purple-500/10 text-purple-700 border-purple-200',
@@ -20,6 +20,7 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 export default function UsersPage() {
+  const { formatDate } = useOrgFormat();
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -83,7 +84,7 @@ export default function UsersPage() {
                   <TableCell className="text-muted-foreground">{u.email as string}</TableCell>
                   <TableCell><Badge className={`text-xs capitalize border ${ROLE_COLORS[u.role as string] || ''}`} variant="outline">{u.role as string}</Badge></TableCell>
                   <TableCell><Badge variant={u.status === 'active' ? 'default' : 'secondary'} className="text-xs">{u.status as string}</Badge></TableCell>
-                  <TableCell className="text-muted-foreground text-sm">{format(new Date(u.created_at as string), 'MMM d, yyyy')}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">{formatDate(u.created_at as string)}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
                       <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => openEdit(u)}>Edit</Button>

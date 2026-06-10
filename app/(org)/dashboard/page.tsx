@@ -3,16 +3,7 @@ import { useDashboardStats } from '@/hooks/use-reports';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Package, CalendarDays, DollarSign, AlertTriangle, Wrench, TrendingUp } from 'lucide-react';
-import { format } from 'date-fns';
-
-const STAT_CARDS = [
-  { key: (s: Record<string,unknown>) => s?.equipment  ? (s.equipment as Record<string,unknown>).total_units  : 0, label: 'Total Units',       icon: Package,       grad: 'stat-violet', glow: 'glow-violet' },
-  { key: (s: Record<string,unknown>) => s?.equipment  ? (s.equipment as Record<string,unknown>).available    : 0, label: 'Available Units',   icon: TrendingUp,    grad: 'stat-cyan',   glow: 'glow-cyan'   },
-  { key: (s: Record<string,unknown>) => s?.equipment  ? (s.equipment as Record<string,unknown>).rented       : 0, label: 'Rented Out',        icon: CalendarDays,  grad: 'stat-green',  glow: 'glow-green'  },
-  { key: (s: Record<string,unknown>) => `$${((s?.revenue as Record<string,unknown>)?.month_revenue ?? 0).toLocaleString()}`, label: 'Month Revenue', icon: DollarSign, grad: 'stat-amber', glow: 'glow-amber' },
-  { key: (s: Record<string,unknown>) => s?.equipment  ? (s.equipment as Record<string,unknown>).maintenance  : 0, label: 'In Maintenance',    icon: Wrench,        grad: 'stat-rose',   glow: 'glow-rose'   },
-  { key: (s: Record<string,unknown>) => s?.maintenance_alerts ?? 0,                                               label: 'Maint. Alerts',     icon: AlertTriangle, grad: 'stat-pink',   glow: 'glow-pink'   },
-];
+import { useOrgFormat } from '@/lib/org-format';
 
 const BOOKING_STATUS: Record<string, string> = {
   active:    'bg-green-500/15 text-green-600 border-green-300  dark:text-green-400 dark:border-green-500/40',
@@ -24,7 +15,17 @@ const BOOKING_STATUS: Record<string, string> = {
 
 export default function DashboardPage() {
   const { data: stats, isLoading } = useDashboardStats();
+  const { formatCurrency, formatDate } = useOrgFormat();
   const s = stats as Record<string, unknown>;
+
+  const STAT_CARDS = [
+    { key: () => s?.equipment  ? (s.equipment as Record<string,unknown>).total_units  : 0, label: 'Total Units',     icon: Package,       grad: 'stat-violet', glow: 'glow-violet' },
+    { key: () => s?.equipment  ? (s.equipment as Record<string,unknown>).available    : 0, label: 'Available Units', icon: TrendingUp,    grad: 'stat-cyan',   glow: 'glow-cyan'   },
+    { key: () => s?.equipment  ? (s.equipment as Record<string,unknown>).rented       : 0, label: 'Rented Out',      icon: CalendarDays,  grad: 'stat-green',  glow: 'glow-green'  },
+    { key: () => formatCurrency((s?.revenue as Record<string,unknown>)?.month_revenue ?? 0), label: 'Month Revenue', icon: DollarSign, grad: 'stat-amber', glow: 'glow-amber' },
+    { key: () => s?.equipment  ? (s.equipment as Record<string,unknown>).maintenance  : 0, label: 'In Maintenance',  icon: Wrench,        grad: 'stat-rose',   glow: 'glow-rose'   },
+    { key: () => s?.maintenance_alerts ?? 0,                                               label: 'Maint. Alerts',   icon: AlertTriangle, grad: 'stat-pink',   glow: 'glow-pink'   },
+  ];
 
   if (isLoading) return (
     <div className="space-y-6">
@@ -52,7 +53,7 @@ export default function DashboardPage() {
             <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/10" />
             <div className="absolute -right-1 -bottom-6 h-16 w-16 rounded-full bg-white/8" />
             <Icon className="h-5 w-5 opacity-90 mb-2 relative z-10" />
-            <p className="text-2xl font-bold relative z-10">{String(key(s ?? {}))}</p>
+            <p className="text-2xl font-bold relative z-10">{String(key())}</p>
             <p className="text-xs text-white/75 mt-0.5 relative z-10 leading-tight">{label}</p>
           </div>
         ))}
@@ -78,7 +79,7 @@ export default function DashboardPage() {
                     <div>
                       <p className="font-medium">{b.equipment_name as string}</p>
                       <p className="text-muted-foreground text-xs mt-0.5">
-                        {b.customer_name as string} · {format(new Date(b.start_date as string), 'MMM d')} – {format(new Date(b.end_date as string), 'MMM d')}
+                        {b.customer_name as string} · {formatDate(b.start_date as string)} – {formatDate(b.end_date as string)}
                       </p>
                     </div>
                     <Badge className={`text-xs capitalize border ${BOOKING_STATUS[b.status as string] || ''}`} variant="outline">
@@ -109,7 +110,7 @@ export default function DashboardPage() {
                     <div>
                       <p className="font-medium">{m.equipment_name as string}</p>
                       <p className="text-muted-foreground text-xs mt-0.5">
-                        {(m.description as string) || (m.type as string)} · {format(new Date(m.scheduled_date as string), 'MMM d, yyyy')}
+                        {(m.description as string) || (m.type as string)} · {formatDate(m.scheduled_date as string)}
                       </p>
                     </div>
                     <Badge variant="outline" className="text-xs capitalize border-amber-300 text-amber-600 dark:text-amber-400 dark:border-amber-500/40">

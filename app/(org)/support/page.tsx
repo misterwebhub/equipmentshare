@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { LifeBuoy, Plus, MessageSquare, Send } from 'lucide-react';
 import { toast } from 'sonner';
+import { useOrgFormat } from '@/lib/org-format';
 
 interface Ticket {
   id: string;
@@ -48,6 +49,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function SupportPage() {
   const qc = useQueryClient();
+  const { formatDate } = useOrgFormat();
   const [showCreate, setShowCreate] = useState(false);
   const [viewTicket, setViewTicket] = useState<Ticket | null>(null);
   const [commentText, setCommentText] = useState('');
@@ -151,7 +153,7 @@ export default function SupportPage() {
                       </Badge>
                     </td>
                     <td className="p-3 text-muted-foreground">{t.created_by_name || '—'}</td>
-                    <td className="p-3 text-muted-foreground text-xs">{new Date(t.created_at).toLocaleDateString()}</td>
+                    <td className="p-3 text-muted-foreground text-xs">{formatDate(t.created_at)}</td>
                     <td className="p-3">
                       <div className="flex gap-1">
                         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openTicket(t)}>
@@ -258,7 +260,7 @@ export default function SupportPage() {
                     <div key={c.id} className="bg-muted/30 rounded-lg p-3">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium">{c.author_name || 'System'}</span>
-                        <span className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleString()}</span>
+                        <span className="text-xs text-muted-foreground">{formatDate(c.created_at, true)}</span>
                       </div>
                       <p className="text-sm">{c.message}</p>
                     </div>

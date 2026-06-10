@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Bell, CheckCheck, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useOrgFormat } from '@/lib/org-format';
 
 interface Notification {
   id: string;
@@ -25,6 +26,7 @@ const TYPE_COLORS: Record<string, string> = {
 
 export default function NotificationsPage() {
   const qc = useQueryClient();
+  const { formatDate } = useOrgFormat();
 
   const { data, isLoading } = useQuery({
     queryKey: ['notifications'],
@@ -97,7 +99,7 @@ export default function NotificationsPage() {
                         <Badge variant="outline" className="text-[10px] capitalize ml-auto shrink-0">{n.type}</Badge>
                       </div>
                       {n.message && <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>}
-                      <p className="text-xs text-muted-foreground/60 mt-1">{new Date(n.created_at).toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground/60 mt-1">{formatDate(n.created_at, true)}</p>
                     </div>
                     <div className="flex gap-1 shrink-0">
                       {!n.is_read && (

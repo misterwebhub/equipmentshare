@@ -246,7 +246,7 @@ export default function EquipmentHealthPage() {
                   <span className="text-sm font-medium">{e.name}</span>
                   <div className="flex items-center gap-4 text-sm">
                     <span className="text-muted-foreground">{e.reports} reports</span>
-                    {e.repair_cost > 0 && <span style={{ color: 'oklch(0.68 0.26 30)' }}>${Number(e.repair_cost).toLocaleString()}</span>}
+                    {e.repair_cost > 0 && <span style={{ color: 'oklch(0.68 0.26 30)' }}>{formatCurrency(e.repair_cost)}</span>}
                   </div>
                 </div>
               ))}
