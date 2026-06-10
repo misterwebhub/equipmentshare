@@ -26,7 +26,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             style={{ background: 'linear-gradient(135deg, oklch(0.70 0.28 270), oklch(0.78 0.22 195))' }}>
             <Package className="h-4 w-4 text-white" />
           </div>
-          <span className="font-bold gradient-text">EquipTrack Pro</span>
+          <span className="font-bold text-foreground">EquipTrack Pro</span>
         </Link>
         <div className="text-xs text-muted-foreground font-mono tracking-wider px-3 py-1 rounded-full border border-border/50">
           SECURE · ENCRYPTED

@@ -58,7 +58,7 @@ export default function ActivityPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold gradient-text">Team Activity</h1>
+        <h1 className="text-2xl font-bold">Team Activity</h1>
         <p className="text-muted-foreground text-sm mt-1">Audit log of all team actions</p>
       </div>
 

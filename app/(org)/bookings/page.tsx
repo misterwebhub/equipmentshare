@@ -420,7 +420,7 @@ export default function BookingsPage() {
       {/* ── Page Header ── */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold gradient-text">Bookings & Invoices</h1>
+          <h1 className="text-2xl font-bold">Bookings & Invoices</h1>
           <p className="text-muted-foreground text-sm mt-1">
             {(bookings as unknown[]).length} records
             {quotationCount > 0 && <span className="ml-2 text-amber-400">· {quotationCount} quotations</span>}

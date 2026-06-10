@@ -55,7 +55,7 @@ export default function NotificationsPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-2xl font-bold gradient-text">Notifications</h1>
+            <h1 className="text-2xl font-bold">Notifications</h1>
             <p className="text-muted-foreground text-sm mt-1">System alerts and updates</p>
           </div>
           {unread > 0 && (

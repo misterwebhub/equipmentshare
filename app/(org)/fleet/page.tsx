@@ -44,7 +44,7 @@ export default function FleetPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold gradient-text flex items-center gap-2">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
           <Layers className="h-6 w-6 text-violet-400" />
           Fleet View
         </h1>
