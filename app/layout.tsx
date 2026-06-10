@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
-import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
+import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/lib/auth-context';
 import ReactQueryProvider from '@/components/react-query-provider';
 import { Toaster } from '@/components/ui/sonner';
 
-const spaceGrotesk = Space_Grotesk({
+const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-space',
+  variable: '--font-sans',
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
 });
 
@@ -25,8 +26,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
-      <body className={spaceGrotesk.className}>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${jetbrainsMono.variable}`}>
+      <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <ReactQueryProvider>
             <AuthProvider>
@@ -34,10 +35,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Toaster
                 toastOptions={{
                   style: {
-                    background: 'oklch(0.10 0.018 265)',
-                    border: '1px solid oklch(0.68 0.24 265 / 0.3)',
-                    color: 'oklch(0.93 0.02 200)',
-                    fontFamily: 'var(--font-space)',
+                    background: 'var(--crm-surface)',
+                    border: '1px solid var(--crm-border)',
+                    color: 'var(--crm-text)',
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: '0.875rem',
                   },
                 }}
               />
