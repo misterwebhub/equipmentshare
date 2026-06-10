@@ -396,7 +396,7 @@ function Navbar() {
 function Hero() {
   return (
     <section
-      aria-label="Hero — Equipment Rental Management Software"
+      aria-label="Hero — Equipment Rental Management Software | EquipTrack Pro"
       className="relative overflow-hidden"
       style={{ background: 'linear-gradient(175deg, #f0f0ff 0%, #e8eeff 30%, #f8fafc 65%, #ffffff 100%)', paddingTop: '68px' }}>
 
@@ -437,7 +437,7 @@ function Hero() {
               WebkitTextFillColor: 'inherit',
               animation: 'fadeInUp 0.6s ease 0.1s both',
             }}>
-            Equipment Rental Management
+            Equipment Rental Management Software
             <br />
             <span style={{
               display: 'inline',

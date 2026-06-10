@@ -6,14 +6,15 @@ import LandingClient from './_landing/LandingClient';
    Next.js writes proper <head> tags for Google + social
 ══════════════════════════════════════════════════════ */
 export const metadata: Metadata = {
-  title: 'EquipTrack Pro — Equipment Rental Management Software',
+  title: 'Equipment Rental Management Software | EquipTrack Pro',
   description:
-    'The #1 SaaS platform for equipment rental businesses. Manage inventory, bookings, maintenance, billing, and team access in one place. Start your 14-day free trial today.',
+    'Manage equipment rentals, fleet tracking & inventory bookings in one platform. Conflict-free scheduling, automated billing & reports. Start your 14-day free trial.',
   keywords: [
-    'equipment rental software', 'rental management system', 'equipment tracking',
+    'equipment rental management software', 'fleet tracking software',
+    'inventory booking system', 'rental management system', 'equipment tracking',
     'fleet management', 'booking software', 'rental business software',
     'equipment inventory management', 'maintenance scheduling', 'rental billing',
-    'construction equipment rental', 'heavy equipment rental software',
+    'construction equipment rental software', 'heavy equipment rental software',
   ],
   authors: [{ name: 'EquipTrack Pro' }],
   creator: 'EquipTrack Pro',
@@ -28,15 +29,15 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: 'https://equiptrackpro.com',
     siteName: 'EquipTrack Pro',
-    title: 'EquipTrack Pro — Equipment Rental Management Software',
+    title: 'Equipment Rental Management Software | EquipTrack Pro',
     description:
-      'The #1 SaaS platform for equipment rental businesses. Manage inventory, bookings, maintenance, billing, and team access in one place. Start free today.',
+      'Manage equipment rentals, fleet tracking & inventory bookings in one platform. Conflict-free scheduling, automated billing & reports. Start free today.',
     images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'EquipTrack Pro Dashboard' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'EquipTrack Pro — Equipment Rental Management Software',
-    description: 'Manage your entire rental fleet in one place. Bookings, inventory, maintenance, billing. Start free today.',
+    title: 'Equipment Rental Management Software | EquipTrack Pro',
+    description: 'Manage equipment rentals, fleet tracking & inventory bookings in one platform. 14-day free trial, no card required.',
     images: ['/og-image.png'],
   },
   alternates: { canonical: 'https://equiptrackpro.com' },
