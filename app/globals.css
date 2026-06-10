@@ -576,33 +576,35 @@ tbody tr { height: 3.25rem; }
   .delay-700  { animation-delay: 0.70s; }
   .delay-800  { animation-delay: 0.80s; }
 
-  /* Scroll-reveal: hidden until JS adds .in-view */
-  .reveal {
-    opacity: 0;
-    transform: translateY(24px);
+  /* ── Scroll-reveal (admin pages) ── */
+  /* Default visible — JS adds .in-view to trigger the animation.
+     Uses .reveal/.reveal-left/.reveal-scale for org/admin pages. */
+  .reveal, .reveal-left, .reveal-scale, .reveal-right {
     transition: opacity 0.65s ease, transform 0.65s ease;
   }
-  .reveal.in-view {
+  /* Before JS hydrates, keep everything visible */
+  .reveal, .reveal-left, .reveal-scale, .reveal-right {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
-  .reveal-left {
+
+  /* ── Landing page scroll-reveal (.sr-item) ──
+     Starts VISIBLE. After JS loads, the page adds
+     class="js-loaded" to <html> which opts elements
+     into the hidden-then-reveal behaviour.           */
+  .sr-item {
+    opacity: 1;
+    transform: none;
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  /* When JS is ready, hide items until they enter viewport */
+  .js-loaded .sr-item:not(.in-view) {
     opacity: 0;
-    transform: translateX(-28px);
-    transition: opacity 0.65s ease, transform 0.65s ease;
+    transform: translateY(20px);
   }
-  .reveal-left.in-view {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  .reveal-scale {
-    opacity: 0;
-    transform: scale(0.94);
-    transition: opacity 0.55s ease, transform 0.55s ease;
-  }
-  .reveal-scale.in-view {
-    opacity: 1;
-    transform: scale(1);
+  .sr-item.in-view {
+    opacity: 1 !important;
+    transform: none !important;
   }
 
   /* ── Border gradient (used sparingly) ── */
