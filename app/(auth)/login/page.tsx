@@ -64,24 +64,28 @@ export default function LoginPage() {
               style={{ background: 'linear-gradient(135deg, oklch(0.52 0.24 264), oklch(0.60 0.18 196))' }}>
               <Package className="h-4.5 w-4.5 text-white" />
             </div>
-            <span className="text-white font-bold text-xl tracking-tight">EquipTrack <span style={{
+            <span className="text-white font-bold text-xl tracking-tight">EquipTrack&nbsp;<span style={{
+              display: 'inline',
               background: 'linear-gradient(135deg, oklch(0.75 0.20 264), oklch(0.80 0.18 196))',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
             }}>Pro</span></span>
           </Link>
 
           {/* Main copy */}
           <div className="space-y-6">
             <div>
-              <h2 className="text-3xl font-bold text-white mb-3 leading-snug">
+              <p className="text-3xl font-bold text-white mb-3 leading-snug" style={{ lineHeight: '1.25' }}>
                 Manage your entire<br />
                 <span style={{
+                  display: 'inline',
                   background: 'linear-gradient(135deg, oklch(0.75 0.20 264) 0%, oklch(0.78 0.18 196) 50%, oklch(0.72 0.18 155) 100%)',
-                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-                }}>
-                  rental fleet
-                </span>{' '}from here.
-              </h2>
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}>rental fleet</span>{' '}from here.
+              </p>
               <p className="text-white/55 text-base leading-relaxed">
                 Equipment inventory, bookings, maintenance, and billing in one platform.
               </p>
@@ -114,11 +118,18 @@ export default function LoginPage() {
               style={{ background: 'linear-gradient(135deg, oklch(0.52 0.24 264), oklch(0.60 0.18 196))' }}>
               <Package className="h-4 w-4 text-white" />
             </div>
-            <span className="font-bold text-lg text-foreground">EquipTrack <span className="gradient-text">Pro</span></span>
+            <span className="font-bold text-lg text-foreground">EquipTrack&nbsp;<span style={{
+              display: 'inline',
+              background: 'linear-gradient(135deg, oklch(0.52 0.24 264), oklch(0.60 0.18 196))',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>Pro</span></span>
           </div>
 
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-foreground mb-1.5" style={{ background: 'none', WebkitTextFillColor: 'inherit' }}>
+            <h1 className="text-2xl font-bold text-foreground mb-1.5"
+              style={{ background: 'none', WebkitTextFillColor: 'currentColor', color: 'inherit' }}>
               Welcome back
             </h1>
             <p className="text-muted-foreground">Sign in to your account to continue</p>
