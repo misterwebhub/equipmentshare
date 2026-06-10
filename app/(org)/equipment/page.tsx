@@ -637,6 +637,9 @@ export default function EquipmentPage() {
       ══════════════════════════════════════════════════════════════ */}
       <Dialog open={!!unitsModalId} onOpenChange={v => { if (!v) setUnitsModalId(null); }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+          <DialogHeader className="sr-only">
+            <DialogTitle>SKU Units — {unitsModalName}</DialogTitle>
+          </DialogHeader>
 
           <div className="px-6 py-4 border-b border-border shrink-0">
             <div className="flex items-center gap-3">
