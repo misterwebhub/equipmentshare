@@ -212,13 +212,13 @@ export default function EquipmentHealthPage() {
                     <td className="p-3 max-w-xs truncate text-muted-foreground">{r.description || '—'}</td>
                     <td className="p-3">{r.repair_cost > 0 ? `$${r.repair_cost}` : '—'}</td>
                     <td className="p-3">
-                      <Badge className="text-xs capitalize" style={{ background: `${STATUS_COLORS[r.status]}20`, color: STATUS_COLORS[r.status], border: `1px solid ${STATUS_COLORS[r.status]}40` }}>
-                        {r.status.replace('_', ' ')}
+                      <Badge className="text-xs capitalize" style={{ background: `${STATUS_COLORS[r.status] ?? '#888'}20`, color: STATUS_COLORS[r.status] ?? '#888', border: `1px solid ${STATUS_COLORS[r.status] ?? '#888'}40` }}>
+                        {(r.status ?? '').replace('_', ' ') || '—'}
                       </Badge>
                     </td>
                     <td className="p-3 text-muted-foreground text-xs">{new Date(r.created_at).toLocaleDateString()}</td>
                     <td className="p-3">
-                      {r.status !== 'resolved' && (
+                      {r.status && r.status !== 'resolved' && (
                         <Button size="sm" variant="outline" className="text-xs h-7"
                           onClick={() => updateMutation.mutate({ id: r.id, status: r.status === 'open' ? 'in_review' : 'resolved' })}>
                           {r.status === 'open' ? 'Review' : 'Resolve'}
