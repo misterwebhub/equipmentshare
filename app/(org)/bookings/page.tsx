@@ -633,12 +633,12 @@ export default function BookingsPage() {
 
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">Start Date *</Label>
-                  <Input className="h-10 bg-background border-border/80" type="date"
+                  <Input className="h-10 bg-background border-border/80" type="date" lang="en-US"
                     value={header.start_date} onChange={setH('start_date')} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">End Date *</Label>
-                  <Input className="h-10 bg-background border-border/80" type="date"
+                  <Input className="h-10 bg-background border-border/80" type="date" lang="en-US"
                     value={header.end_date} onChange={setH('end_date')} />
                 </div>
 
@@ -656,7 +656,7 @@ export default function BookingsPage() {
                 {header.is_quotation && (
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">Quotation Expires</Label>
-                    <Input className="h-10 bg-background border-border/80" type="date"
+                    <Input className="h-10 bg-background border-border/80" type="date" lang="en-US"
                       value={header.quotation_expires_at}
                       onChange={e => setHeader(p => ({ ...p, quotation_expires_at: e.target.value }))} />
                   </div>

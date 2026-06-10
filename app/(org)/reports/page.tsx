@@ -1,5 +1,5 @@
 'use client';
-import { useDashboardStats, useRevenueReport, useUtilisationReport } from '@/hooks/use-reports';
+import { useDashboardStats, useRevenueReport, useUtilizationReport } from '@/hooks/use-reports';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -10,11 +10,15 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'
 export default function ReportsPage() {
   const { data: stats } = useDashboardStats();
   const { data: revenue } = useRevenueReport(6);
-  const { data: utilisation } = useUtilisationReport();
+  const { data: utilisation } = useUtilizationReport();
 
-  const monthlyData = (revenue as Record<string, unknown> | undefined)?.monthly ?? [];
-  const byEquipment = (revenue as Record<string, unknown> | undefined)?.by_equipment ?? [];
-  const byCustomer = (revenue as Record<string, unknown> | undefined)?.by_customer ?? [];
+  // MySQL SUM/COUNT returns strings — cast to Number so Recharts renders correctly
+  const monthlyData = ((revenue as Record<string, unknown> | undefined)?.monthly as Record<string, unknown>[] ?? [])
+    .map(r => ({ ...r, revenue: Number(r.revenue ?? 0), bookings_count: Number(r.bookings_count ?? 0) }));
+  const byEquipment = ((revenue as Record<string, unknown> | undefined)?.by_equipment as Record<string, unknown>[] ?? [])
+    .map(r => ({ ...r, revenue: Number(r.revenue ?? 0), bookings: Number(r.bookings ?? 0) }));
+  const byCustomer = ((revenue as Record<string, unknown> | undefined)?.by_customer as Record<string, unknown>[] ?? [])
+    .map(r => ({ ...r, revenue: Number(r.revenue ?? 0), bookings: Number(r.bookings ?? 0) }));
 
   return (
     <div className="space-y-6">
@@ -77,7 +81,7 @@ export default function ReportsPage() {
               </CardContent>
             </Card>
             <Card>
-              <CardHeader><CardTitle className="text-base">Utilisation Overview</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">Utilization Overview</CardTitle></CardHeader>
               <CardContent>
                 {!(utilisation as unknown[])?.length ? <p className="text-muted-foreground text-sm">No data yet</p> : (
                   <ResponsiveContainer width="100%" height={220}>

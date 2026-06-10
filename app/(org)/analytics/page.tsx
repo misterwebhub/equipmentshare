@@ -64,7 +64,7 @@ export default function AnalyticsPage() {
           { label: 'Total Units', value: equipment.total_units || 0, icon: Package, color: 'oklch(0.78 0.22 195)' },
           { label: 'Active Bookings', value: bookings.active || 0, icon: Calendar, color: 'oklch(0.68 0.26 250)' },
           { label: 'Month Revenue', value: `$${Number(dash.revenue?.month_revenue || 0).toLocaleString()}`, icon: DollarSign, color: 'oklch(0.76 0.22 155)' },
-          { label: 'Utilisation', value: equipment.total_units ? `${Math.round(((equipment.rented||0) / equipment.total_units) * 100)}%` : '0%', icon: TrendingUp, color: 'oklch(0.70 0.28 270)' },
+          { label: 'Utilization', value: equipment.total_units ? `${Math.round(((equipment.rented||0) / equipment.total_units) * 100)}%` : '0%', icon: TrendingUp, color: 'oklch(0.70 0.28 270)' },
         ].map(({ label, value, icon: Icon, color }) => (
           <Card key={label} className="border-border/60">
             <CardContent className="p-4">
@@ -83,9 +83,9 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Fleet Utilisation Pie */}
+        {/* Fleet Utilization Pie */}
         <Card className="border-border/60">
-          <CardHeader><CardTitle className="text-sm">Fleet Utilisation</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-sm">Fleet Utilization</CardTitle></CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={220}>
               <PieChart>

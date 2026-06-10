@@ -24,7 +24,7 @@ const DAMAGE_COLORS: Record<string, string> = {
 };
 
 export default function DamageReportsPage() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['damage-reports'],
     queryFn: async () => {
       // Only fetch reports with actual damage (exclude 'none')
@@ -49,7 +49,7 @@ export default function DamageReportsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold gradient-text">Damage Reports</h1>
+          <h1 className="text-2xl font-bold">Damage Reports</h1>
           <p className="text-muted-foreground text-sm mt-1">All equipment damage incidents</p>
         </div>
       </div>
@@ -88,6 +88,8 @@ export default function DamageReportsPage() {
               <tbody>
                 {isLoading ? (
                   <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
+                ) : isError ? (
+                  <tr><td colSpan={8} className="p-8 text-center text-destructive">Failed to load damage reports. Please refresh the page.</td></tr>
                 ) : reports.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="p-12 text-center">
@@ -115,10 +117,14 @@ export default function DamageReportsPage() {
                       {r.repair_cost > 0 ? `$${Number(r.repair_cost).toLocaleString()}` : '—'}
                     </td>
                     <td className="p-3">
-                      <Badge variant="outline" className="text-xs capitalize">{r.status.replace('_', ' ')}</Badge>
+                      <Badge variant="outline" className="text-xs capitalize">
+                        {(r.status ?? '').replace('_', ' ') || '—'}
+                      </Badge>
                     </td>
                     <td className="p-3 text-muted-foreground">{r.reporter_name || 'System'}</td>
-                    <td className="p-3 text-muted-foreground text-xs">{new Date(r.created_at).toLocaleDateString()}</td>
+                    <td className="p-3 text-muted-foreground text-xs">
+                      {r.created_at ? new Date(r.created_at).toLocaleDateString('en-US') : '—'}
+                    </td>
                   </tr>
                 ))}
               </tbody>

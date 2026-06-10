@@ -220,7 +220,7 @@ async function resetAndSeed(req, res) {
       `INSERT INTO penalties (id, org_id, booking_id, customer_id, type, amount, days_overdue, description, status)
        VALUES (?,?,?,?,?,?,?,?,?)`,
       [uuidv4(), orgId, damageBid, customers[1].id,
-       'damage', 750.00, 0, 'Fork tine scratched warehouse floor — repair cost billed', 'invoiced']
+       'damage', 750.00, 0, 'Fork tine scratched warehouse floor — repair cost billed', 'paid']
     );
 
     /* ── 8. Maintenance schedules ── */

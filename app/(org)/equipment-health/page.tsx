@@ -120,7 +120,7 @@ export default function EquipmentHealthPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold gradient-text">Equipment Health</h1>
+          <h1 className="text-2xl font-bold">Equipment Health</h1>
           <p className="text-muted-foreground text-sm mt-1">Condition reports & damage tracking</p>
         </div>
         <Button onClick={() => setShowCreate(true)} style={{ background: 'linear-gradient(135deg, oklch(0.70 0.28 270), oklch(0.78 0.22 195))' }} className="text-white gap-2">

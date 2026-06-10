@@ -11,9 +11,10 @@ import { Search, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-500/10 text-yellow-700 border-yellow-200',
-  paid: 'bg-green-500/10 text-green-700 border-green-200',
-  waived: 'bg-gray-500/10 text-gray-700 border-gray-200',
+  pending:  'bg-yellow-500/10 text-yellow-700 border-yellow-200',
+  paid:     'bg-green-500/10 text-green-700 border-green-200',
+  invoiced: 'bg-blue-500/10 text-blue-700 border-blue-200',
+  waived:   'bg-gray-500/10 text-gray-700 border-gray-200',
 };
 
 export default function PenaltiesPage() {
@@ -28,8 +29,8 @@ export default function PenaltiesPage() {
     return (p.equipment_name as string)?.toLowerCase().includes(q) || (p.customer_name as string)?.toLowerCase().includes(q);
   });
 
-  const totalPending = (penalties as Record<string, unknown>[]).filter(p => p.status === 'pending').reduce((s, p) => s + (p.amount as number), 0);
-  const totalPaid = (penalties as Record<string, unknown>[]).filter(p => p.status === 'paid').reduce((s, p) => s + (p.amount as number), 0);
+  const totalPending = (penalties as Record<string, unknown>[]).filter(p => p.status === 'pending').reduce((s, p) => s + Number(p.amount ?? 0), 0);
+  const totalPaid = (penalties as Record<string, unknown>[]).filter(p => p.status === 'paid').reduce((s, p) => s + Number(p.amount ?? 0), 0);
 
   return (
     <div className="space-y-6">
@@ -84,7 +85,7 @@ export default function PenaltiesPage() {
                   <TableCell className="font-medium">{(p.equipment_name as string) || '—'}</TableCell>
                   <TableCell>{(p.customer_name as string) || '—'}</TableCell>
                   <TableCell className="capitalize">{(p.type as string)?.replace('_', ' ')}</TableCell>
-                  <TableCell className="font-medium">${(p.amount as number)?.toLocaleString()}</TableCell>
+                  <TableCell className="font-medium">${Number(p.amount ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                   <TableCell className="text-muted-foreground text-sm">{format(new Date(p.created_at as string), 'MMM d, yyyy')}</TableCell>
                   <TableCell>
                     <Badge className={`text-xs capitalize border ${STATUS_COLORS[p.status as string] || ''}`} variant="outline">{p.status as string}</Badge>

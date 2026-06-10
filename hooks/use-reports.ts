@@ -23,12 +23,15 @@ export function useRevenueReport(months = 6) {
   });
 }
 
-export function useUtilisationReport() {
+export function useUtilizationReport() {
   return useQuery({
-    queryKey: ['reports-utilisation'],
+    queryKey: ['reports-utilization'],
     queryFn: async () => {
-      const { data } = await api.get('/reports/utilisation');
+      const { data } = await api.get('/reports/utilisation'); // API endpoint kept as-is
       return data.data as unknown[];
     },
   });
 }
+
+/** @deprecated use useUtilizationReport */
+export const useUtilisationReport = useUtilizationReport;
